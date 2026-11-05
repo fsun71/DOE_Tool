@@ -1,0 +1,3910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOE Statistical Sizing Engine | Test &amp; Evaluation Power Design Tool</title>
+<style>
+  :root {
+    --bg-dark: #0b1120;
+    --bg-panel: #111827;
+    --bg-card: #1e293b;
+    --bg-input: #0f172a;
+    --border: #334155;
+    --border-focus: #38bdf8;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --accent: #0ea5e9;
+    --accent-hover: #0284c7;
+    --accent-soft: rgba(14, 165, 233, 0.15);
+    --success: #10b981;
+    --success-soft: rgba(16, 185, 129, 0.15);
+    --warning: #f59e0b;
+    --warning-soft: rgba(245, 158, 11, 0.15);
+    --danger: #ef4444;
+    --danger-soft: rgba(239, 68, 68, 0.15);
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    line-height: 1.5;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Header */
+  header {
+    background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 0.9rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .brand-badge {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.85rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: 6px;
+    letter-spacing: 0.06em;
+    box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+  }
+  .brand-title h1 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .brand-title p {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+  }
+
+  /* Navigation Tabs */
+  .nav-tabs {
+    display: flex;
+    gap: 0.4rem;
+    background: var(--bg-input);
+    padding: 0.3rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+  .nav-tab {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .nav-tab:hover { color: var(--text-main); background: rgba(255,255,255,0.04); }
+  .nav-tab.active {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.35);
+  }
+  .badge-count {
+    background: rgba(0,0,0,0.3);
+    padding: 0.1rem 0.45rem;
+    border-radius: 99px;
+    font-size: 0.72rem;
+  }
+
+  /* Layout */
+  .app-container {
+    display: grid;
+    grid-template-columns: 430px 1fr;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - 63px);
+  }
+  @media (max-width: 1100px) {
+    .app-container {
+      grid-template-columns: 1fr;
+      height: auto;
+      overflow: visible;
+    }
+  }
+
+  /* Left Configuration Sidebar */
+  .sidebar {
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .config-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.95rem;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .config-section-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--border-focus);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.65rem;
+    width: 100%;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+    min-width: 0;
+  }
+  .form-group.full {
+    grid-column: 1 / -1;
+  }
+  label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 0.44rem 0.55rem;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s;
+    text-overflow: ellipsis;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--border-focus);
+  }
+  .checkbox-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0.55rem;
+    font-size: 0.79rem;
+    color: var(--text-main);
+    cursor: pointer;
+    padding-top: 0.35rem;
+    white-space: normal;
+    line-height: 1.35;
+  }
+  .checkbox-row input[type="checkbox"] {
+    accent-color: var(--accent);
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+    margin-top: 0.12rem;
+  }
+  .checkbox-row span {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Factor list editor */
+  .factor-item {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr) 28px;
+    gap: 0.45rem;
+    align-items: center;
+    margin-bottom: 0.45rem;
+    width: 100%;
+  }
+  .btn-icon {
+    background: var(--danger-soft);
+    color: var(--danger);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 5px;
+    height: 31px;
+    width: 28px;
+    cursor: pointer;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .btn-icon:hover { background: var(--danger); color: #fff; }
+  .btn-secondary {
+    background: rgba(255,255,255,0.06);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    padding: 0.42rem 0.75rem;
+    border-radius: 5px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-shrink: 0;
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.12); border-color: var(--text-muted); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1rem;
+    border-radius: 7px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    flex-shrink: 0;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(2, 132, 199, 0.55); }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+  /* Main Content Area */
+  .main-content {
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    min-width: 0;
+  }
+  .tab-pane { display: none; flex-direction: column; gap: 1.25rem; }
+  .tab-pane.active { display: flex; }
+
+  /* Cards & KPIs */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    min-width: 0;
+  }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+    gap: 0.85rem;
+  }
+  .kpi-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem 1rem;
+    min-width: 0;
+  }
+  .kpi-label {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .kpi-value {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--border-focus);
+    margin-top: 0.2rem;
+    font-family: var(--font-mono);
+  }
+  .kpi-sub {
+    font-size: 0.73rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+  }
+
+  /* Tables */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+  }
+  th, td {
+    padding: 0.65rem 0.85rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    background: var(--bg-panel);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .mono { font-family: var(--font-mono); }
+
+  /* Status Pills */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.18rem 0.55rem;
+    border-radius: 99px;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+  .pill-ok { background: var(--success-soft); color: var(--success); }
+  .pill-warn { background: var(--warning-soft); color: var(--warning); }
+  .pill-danger { background: var(--danger-soft); color: var(--danger); }
+  .pill-info { background: var(--accent-soft); color: var(--border-focus); }
+
+  /* Narrative Box */
+  .narrative-box {
+    background: var(--bg-input);
+    border-left: 4px solid var(--accent);
+    border-top: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 1rem 1.15rem;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    color: #e2e8f0;
+  }
+
+  /* Plots Grid */
+  .canvas-wrap {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 0.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  canvas {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Log console */
+  .console-box {
+    background: #050811;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.85rem;
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    color: #a7f3d0;
+    max-height: 240px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+
+  /* Constraint Builder */
+  .rule-builder-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+    background: var(--bg-panel);
+    padding: 0.65rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+  }
+  .rule-builder-row select {
+    width: auto;
+    min-width: 120px;
+  }
+  .candidate-grid {
+    max-height: 360px;
+    overflow-y: auto;
+  }
+
+  /* User Guide Styling */
+  .guide-grid {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 1.25rem;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .guide-grid { grid-template-columns: 1fr; }
+  }
+  .guide-toc {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    position: sticky;
+    top: 1rem;
+  }
+  .guide-toc a {
+    display: block;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.82rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 5px;
+    transition: all 0.15s;
+  }
+  .guide-toc a:hover {
+    color: var(--border-focus);
+    background: rgba(255,255,255,0.04);
+  }
+  .guide-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .guide-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+  .guide-section h2 {
+    font-size: 1.05rem;
+    color: var(--border-focus);
+    margin-bottom: 0.65rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.45rem;
+  }
+  .guide-section h3 {
+    font-size: 0.9rem;
+    color: var(--text-main);
+    margin: 0.85rem 0 0.35rem 0;
+  }
+  .guide-section p, .guide-section li {
+    font-size: 0.85rem;
+    color: #cbd5e1;
+    margin-bottom: 0.45rem;
+  }
+  .guide-section ul, .guide-section ol {
+    padding-left: 1.25rem;
+  }
+  .formula-chip {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: #38bdf8;
+    margin: 0.45rem 0;
+    display: inline-block;
+  }
+  .faq-item {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 0.6rem;
+    overflow: hidden;
+  }
+  .faq-q {
+    background: var(--bg-panel);
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    font-size: 0.86rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .faq-a {
+    padding: 0.85rem 1rem;
+    font-size: 0.84rem;
+    color: #cbd5e1;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+  }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--success);
+    color: #fff;
+    padding: 0.65rem 1.1rem;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 999;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-badge">4 TES</div>
+    <div class="brand-title">
+      <h1>DOE Statistical Sizing Engine</h1>
+      <p>Threshold &amp; Multivariate D-Optimal Factorial Power Analysis Tool (Standalone Edition)</p>
+    </div>
+  </div>
+
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('dashboard', this)">
+      <span>📊 Analysis &amp; Plots</span>
+    </button>
+    <button class="nav-tab" onclick="switchTab('constraints', this)">
+      <span>🛡️ Constraint Builder</span>
+      <span class="badge-count" id="disallowedBadge">0</span>
+    </button>
+    <button class="nav-tab" onclick="switchTab('matrix', this)">
+      <span>📋 Run Matrix &amp; Export</span>
+      <span class="badge-count" id="matrixCountBadge">0</span>
+    </button>
+    <button class="nav-tab" onclick="switchTab('guide', this)">
+      <span>📘 User Guide &amp; FAQ</span>
+    </button>
+  </div>
+</header>
+
+<div class="app-container">
+  <!-- LEFT SIDEBAR: PARAMETERS -->
+  <aside class="sidebar">
+    <button class="btn-primary" id="runEngineBtn" onclick="executeEngine()">
+      <span>⚡ Run Sizing &amp; Optimization Engine</span>
+    </button>
+
+    <!-- Sidebar Live Progress & ETA Indicator -->
+    <div id="sidebarProgressBox" style="display:none; background: var(--bg-card); border: 1px solid var(--border-focus); border-radius: 8px; padding: 0.75rem; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);">
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.76rem; margin-bottom:0.35rem;">
+        <span id="sidebarProgressStage" style="font-weight:700; color:var(--border-focus);">Running Monte Carlo...</span>
+        <span id="sidebarProgressPct" class="mono" style="font-weight:700; color:var(--text-main);">0%</span>
+      </div>
+      <div style="background: var(--bg-input); height: 8px; border-radius: 99px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 0.35rem;">
+        <div id="sidebarProgressBar" style="background: linear-gradient(90deg, #0ea5e9, #10b981); width: 0%; height: 100%; transition: width 0.12s ease;"></div>
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:0.71rem; color:var(--text-muted);">
+        <span id="sidebarProgressDetail">Initializing...</span>
+        <span id="sidebarProgressEta" class="mono">ETA: --</span>
+      </div>
+    </div>
+
+    <!-- 1. Execution & Response Type -->
+    <div class="config-section">
+      <div class="config-section-title">1. Response &amp; Design Mode</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Response Type</label>
+          <select id="RESPONSE_TYPE" onchange="toggleResponseSettings()">
+            <option value="PROPORTIONAL" selected>Proportional (Binary)</option>
+            <option value="CONTINUOUS">Continuous (Normal)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Optimization Mode</label>
+          <select id="OPTIMIZATION_MODE">
+            <option value="ITERATIVE" selected>Iterative (Exact N)</option>
+            <option value="REPLICATE">Replicate (Base Block)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Test Sidedness</label>
+          <select id="TEST_SIDEDNESS">
+            <option value="smaller" selected>Smaller (Lower-Tailed)</option>
+            <option value="larger">Larger (Upper-Tailed)</option>
+            <option value="two-sided">Two-Sided</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Interaction Order</label>
+          <select id="INTERACTION_ORDER">
+            <option value="1" selected>1 (Main Effects Only)</option>
+            <option value="2">2 (Main + 2-Way)</option>
+            <option value="3">3 (Main + 2-Way + 3-Way)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Proportional Specific -->
+      <div id="proportionalInputs" style="margin-top:0.65rem;" class="form-grid">
+        <div class="form-group">
+          <label>Baseline Threshold (P0)</label>
+          <input type="number" id="P0" value="0.75" step="0.01" min="0.01" max="0.99">
+        </div>
+        <div class="form-group">
+          <label>Diffs to Detect (CSV)</label>
+          <input type="text" id="DIFFS_TO_DETECT" value="0.20, 0.15, 0.10">
+        </div>
+      </div>
+
+      <!-- Continuous Specific -->
+      <div id="continuousInputs" style="margin-top:0.65rem; display:none;" class="form-grid">
+        <div class="form-group full">
+          <label>Signal-to-Noise Ratios — SNR_VALUES (CSV)</label>
+          <input type="text" id="SNR_VALUES" value="0.50, 1.00, 1.50">
+        </div>
+      </div>
+
+      <label class="checkbox-row" style="margin-top:0.55rem;">
+        <input type="checkbox" id="FORCE_FULL_FACTORIAL" onchange="handleFullFactorialToggle()">
+        <span>Force Full Factorial Base Block (Auto-Sets REPLICATE)</span>
+      </label>
+    </div>
+
+    <!-- 2. Factors & Levels -->
+    <div class="config-section">
+      <div class="config-section-title">
+        <span>2. Factors &amp; Levels</span>
+        <button class="btn-secondary" onclick="addFactorRow()">+ Add Factor</button>
+      </div>
+      <div id="factorsContainer"></div>
+      <div class="form-grid" style="margin-top:0.6rem;">
+        <div class="form-group">
+          <label>Blocking Factor</label>
+          <select id="BLOCKING_FACTOR"></select>
+        </div>
+        <div class="form-group">
+          <label>Block Size (Replicate)</label>
+          <input type="number" id="BLOCK_SIZE" placeholder="None (Auto)" min="1">
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Power, Alpha & Monte Carlo -->
+    <div class="config-section">
+      <div class="config-section-title">3. Power, Alpha &amp; Monte Carlo</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Target Power</label>
+          <input type="number" id="TARGET_POWER" value="0.80" step="0.01" min="0.05" max="0.99">
+        </div>
+        <div class="form-group">
+          <label>Alpha (Type I Error)</label>
+          <input type="number" id="ALPHA" value="0.20" step="0.01" min="0.001" max="0.50">
+        </div>
+        <div class="form-group">
+          <label>Multiplicity Method</label>
+          <select id="MULTIPLICITY_METHOD">
+            <option value="NONE" selected>None (Per-Term Alpha)</option>
+            <option value="BONFERRONI">Bonferroni (Family-Wise)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Computational Effort</label>
+          <select id="COMPUTATIONAL_EFFORT">
+            <option value="TEST">Test (Fastest Preview)</option>
+            <option value="DRAFT" selected>Draft (Rapid Planning)</option>
+            <option value="NORMAL">Normal (Standard Review)</option>
+            <option value="HIGH">High (Report Validation)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Wilson MC Confidence</label>
+          <input type="number" id="MC_CONFIDENCE" value="0.60" step="0.05" min="0.50" max="0.99">
+        </div>
+        <div class="form-group">
+          <label>Matrix Sizing Value</label>
+          <input type="number" id="MATRIX_SIZING_VALUE" value="0.20" step="0.01">
+        </div>
+      </div>
+      <label class="checkbox-row" style="margin-top:0.5rem;">
+        <input type="checkbox" id="USE_CONSERVATIVE_MC_BOUND" checked>
+        <span>Require One-Sided Wilson Lower Bound &ge; Target Power</span>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="MC_REFINE_EXACT_N" checked>
+        <span>Exhaustive High-Fidelity Exact-N MC Refinement</span>
+      </label>
+    </div>
+
+    <!-- 4. Run Limits & Search Controls -->
+    <div class="config-section">
+      <div class="config-section-title">4. Search &amp; Plotting Controls</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Max Allowable Runs</label>
+          <input type="number" id="MAX_ALLOWABLE_RUNS" value="2000" min="10">
+        </div>
+        <div class="form-group">
+          <label>Search Start N</label>
+          <input type="number" id="SEARCH_START_N" placeholder="Auto (Min Estimable)">
+        </div>
+        <div class="form-group">
+          <label>Coarse Step</label>
+          <input type="number" id="COARSE_SEARCH_STEP" value="18" min="1">
+        </div>
+        <div class="form-group">
+          <label>Fine Step</label>
+          <input type="number" id="FINE_SEARCH_STEP" value="1" min="1">
+        </div>
+        <div class="form-group">
+          <label>MC Grid Step</label>
+          <input type="number" id="MC_SEARCH_STEP" value="6" min="1">
+        </div>
+        <div class="form-group">
+          <label>Random Seed</label>
+          <input type="number" id="RANDOM_SEED" value="42" step="1">
+        </div>
+        <div class="form-group">
+          <label>Plot Points</label>
+          <input type="number" id="PLOT_POINTS" value="12" min="4" max="40">
+        </div>
+        <div class="form-group" style="justify-content:flex-end;">
+          <label class="checkbox-row">
+            <input type="checkbox" id="APPLY_PLOT_SMOOTHING">
+            <span>Smooth Curve</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- RIGHT MAIN AREA -->
+  <main class="main-content">
+
+    <!-- TAB 1: ANALYSIS & PLOTS -->
+    <div id="tab-dashboard" class="tab-pane active">
+      <!-- Top Model Diagnostics KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Model Formula (Sum Coded)</div>
+          <div class="kpi-value" id="kpiFormula" style="font-size:0.86rem; word-break:break-all;">--</div>
+          <div class="kpi-sub" id="kpiModeSub">--</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Candidate Space</div>
+          <div class="kpi-value" id="kpiCandidates">--</div>
+          <div class="kpi-sub" id="kpiDisallowedSub">0 constrained out</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Model Rank / Params</div>
+          <div class="kpi-value" id="kpiRank">--</div>
+          <div class="kpi-sub" id="kpiAlphaSub">Effective α: --</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Selected Export Design</div>
+          <div class="kpi-value" id="kpiExportN">-- Runs</div>
+          <div class="kpi-sub" id="kpiExportCond">Condition: --</div>
+        </div>
+      </div>
+
+      <!-- Summary Table Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📈 Power Analysis Summary Across Conditions</div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button class="btn-secondary" onclick="downloadPlotPNG()">🖼️ Download Power Curves (PNG)</button>
+            <button class="btn-secondary" onclick="downloadSelectedCSV()">📥 Download Selected Run Matrix (CSV)</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="summaryTable">
+            <thead>
+              <tr>
+                <th>Condition</th>
+                <th>Threshold N</th>
+                <th>Factorial N</th>
+                <th>Min Term Power</th>
+                <th>MC Wilson LB</th>
+                <th>D-Criterion</th>
+                <th>Status</th>
+                <th>Term-Level Breakdown</th>
+                <th>Quick Export</th>
+              </tr>
+            </thead>
+            <tbody id="summaryTableBody">
+              <tr><td colspan="9" style="text-align:center; color:var(--text-muted);">Click "Run Sizing &amp; Optimization Engine" to compute results.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Main Visible Progress Banner during Simulation -->
+      <div class="card" id="mainProgressCard" style="display:none; border-color: var(--border-focus); background: linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, var(--bg-card) 100%);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.55rem; flex-wrap:wrap; gap:0.5rem;">
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <span style="font-size:1.05rem;">⏳</span>
+            <span id="mainProgressStage" style="font-weight:700; font-size:0.92rem; color:var(--text-main);">Sizing &amp; Monte Carlo Simulation in Progress...</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.85rem;">
+            <span id="mainProgressEta" class="mono" style="font-size:0.8rem; color:var(--border-focus); font-weight:600;">ETA: Calculating...</span>
+            <span id="mainProgressPct" class="mono" style="font-size:0.9rem; font-weight:800; color:var(--success);">0%</span>
+          </div>
+        </div>
+        <div style="background: var(--bg-input); height: 12px; border-radius: 99px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 0.45rem;">
+          <div id="mainProgressBar" style="background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 50%, #10b981 100%); width: 0%; height: 100%; transition: width 0.12s ease;"></div>
+        </div>
+        <div id="mainProgressDetail" class="mono" style="font-size:0.76rem; color:var(--text-muted);">Preparing candidate treatment space...</div>
+      </div>
+
+      <!-- Power Curves Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🎯 Threshold vs. Multivariate Factorial Power Curves</div>
+          <span style="font-size:0.76rem; color:var(--text-muted);">High-DPI Export | Shared Legend | Superimposed Sample Size Badges</span>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="powerCanvas" width="2400" height="960"></canvas>
+        </div>
+      </div>
+
+      <!-- Copy-Pastable Test Plan/Report Text Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📝 Copy-Pastable Test Plan/Report Text</div>
+          <div style="display:flex; gap:0.5rem; align-items:center;">
+            <select id="narrativeConditionSelect" onchange="renderSelectedNarrative()" style="display:none; font-size:0.8rem; width:auto;"></select>
+            <button class="btn-secondary" onclick="copyNarrativeText()">📋 Copy Test Plan/Report Text</button>
+          </div>
+        </div>
+        <div class="narrative-box" id="narrativeOutput">Run the engine to generate copy-pastable test plan/report text.</div>
+      </div>
+
+      <!-- Execution Log (Collapsible Menu for Debugging) -->
+      <div class="card">
+        <details id="debugLogDetails">
+          <summary style="cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:0.95rem; color:var(--text-main);">
+            <span style="display:inline-flex; align-items:center; gap:0.5rem;">💻 Engine Search &amp; Monte Carlo Verification Log <span style="font-size:0.75rem; font-weight:500; color:var(--text-muted);">(Click to expand/collapse debugging log)</span></span>
+            <button class="btn-secondary" onclick="event.preventDefault(); event.stopPropagation(); copyEngineLog();">📋 Copy Log</button>
+          </summary>
+          <div class="console-box" id="engineLogConsole" style="margin-top:0.9rem;">Ready.</div>
+        </details>
+      </div>
+    </div>
+
+    <!-- TAB 2: CONSTRAINT BUILDER (BOTH VISUAL & EXPRESSION) -->
+    <div id="tab-constraints" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🛡️ Mode A: Visual Rule Builder (Disallowed Factor Combinations)</div>
+          <button class="btn-secondary" onclick="clearAllRules()">Clear All Rules</button>
+        </div>
+        <p style="font-size:0.83rem; color:var(--text-muted); margin-bottom:0.85rem;">
+          Build multi-factor operational/safety exclusion rules (e.g., <code>Altitude == "Low" AND Speed == "Fast"</code>). Any candidate treatment combination matching all conditions in a rule will be excluded before D-optimal sizing.
+        </p>
+
+        <div class="rule-builder-row" id="newRuleRow"></div>
+        <div style="margin-bottom:1rem;">
+          <button class="btn-secondary" onclick="addVisualRule()">+ Add Exclusion Rule from Selected Levels</button>
+        </div>
+
+        <div id="activeRulesList" style="display:flex; flex-direction:column; gap:0.4rem;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">⌨️ Mode B: Custom Expression Filter (<code>is_disallowed(row)</code>)</div>
+          <span class="pill pill-info">Supports Python/JS Syntax</span>
+        </div>
+        <p style="font-size:0.83rem; color:var(--text-muted); margin-bottom:0.65rem;">
+          Write a boolean expression exactly like the notebook's <code>is_disallowed(row)</code> function. Both Python style (<code>row["F"] == "F1" and row["D"] == "D4"</code>) and JavaScript style (<code>row.F === "F1" &amp;&amp; row.D === "D4"</code>) are automatically supported.
+        </p>
+        <textarea id="customConstraintExpr" rows="3" style="width:100%; font-family:var(--font-mono);" placeholder='Example: row["F"] == "F1" and row["D"] == "D4"' oninput="refreshCandidatePreview()"></textarea>
+        <div id="exprStatusMsg" style="font-size:0.78rem; margin-top:0.35rem; color:var(--success);">Expression valid (No custom expression active).</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">☑️ Mode C: Interactive Candidate Space Table (Manual Row Toggle)</div>
+          <div style="display:flex; gap:0.5rem;">
+            <button class="btn-secondary" onclick="allowAllManualRows()">Allow All Manual Checkboxes</button>
+          </div>
+        </div>
+        <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:0.75rem;">
+          Review all <strong id="totalCartCount">0</strong> full-factorial combinations below. Uncheck any specific row to manually disallow it, or verify which rows are excluded by your Visual Rules / Custom Expression.
+        </p>
+        <div class="table-wrap candidate-grid">
+          <table>
+            <thead id="candidateTableHead"></thead>
+            <tbody id="candidateTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: RUN MATRIX & EXPORT -->
+    <div id="tab-matrix" class="tab-pane">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 Optimized DOE Run Matrix &amp; Treatment Allocation</div>
+          <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+            <label style="font-size:0.8rem;">Inspect Scenario:</label>
+            <select id="matrixScenarioSelect" onchange="renderMatrixTab()" style="width:auto;"></select>
+            <button class="btn-secondary" onclick="randomizeDisplayedMatrix()">🔀 Randomize Run Order</button>
+            <button class="btn-secondary" onclick="downloadActiveMatrixCSV()">📥 Download Annotated CSV</button>
+          </div>
+        </div>
+
+        <div class="kpi-grid" style="margin-bottom:1rem;">
+          <div class="kpi-card">
+            <div class="kpi-label">Scenario Condition</div>
+            <div class="kpi-value" id="matKpiCond" style="font-size:1rem;">--</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Recommended DOE Runs</div>
+            <div class="kpi-value" id="matKpiRuns">--</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Minimum Omnibus Power</div>
+            <div class="kpi-value" id="matKpiPower">--</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Relative D-Criterion</div>
+            <div class="kpi-value" id="matKpiDCrit">--</div>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1.3fr; gap:1rem;">
+          <div>
+            <h3 style="font-size:0.88rem; margin-bottom:0.5rem; color:var(--border-focus);">Run Counts by Factor Combination</h3>
+            <div class="table-wrap" style="max-height:460px; overflow-y:auto;">
+              <table>
+                <thead id="allocationTableHead"></thead>
+                <tbody id="allocationTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h3 style="font-size:0.88rem; margin-bottom:0.5rem; color:var(--border-focus);">Run-by-Run Test Matrix</h3>
+            <div class="table-wrap" style="max-height:460px; overflow-y:auto;">
+              <table>
+                <thead id="runMatrixTableHead"></thead>
+                <tbody id="runMatrixTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: CONDENSED USER GUIDE & FAQ -->
+    <div id="tab-guide" class="tab-pane">
+      <div class="guide-grid">
+        <nav class="guide-toc">
+          <div style="font-weight:700; font-size:0.85rem; color:var(--text-main); margin-bottom:0.5rem;">Quick Navigation</div>
+          <a href="#g-purpose">1. Purpose &amp; Workflow</a>
+          <a href="#g-prop">2. Proportional Response Path</a>
+          <a href="#g-cont">3. Continuous Response Path</a>
+          <a href="#g-modes">4. Iterative vs. Replicate Modes</a>
+          <a href="#g-controls">5. Factors, Blocking &amp; Alpha</a>
+          <a href="#g-limits">6. Limitations &amp; Validation</a>
+          <a href="#g-faq">7. Frequently Asked Questions</a>
+        </nav>
+
+        <div class="guide-content">
+          <div class="guide-section" id="g-purpose">
+            <h2>1. Purpose &amp; Basic Workflow</h2>
+            <p>
+              The <strong>DOE Statistical Sizing Engine</strong> supports test planning and resource estimation by calculating the number of test runs required to achieve specified statistical power for both:
+            </p>
+            <ul>
+              <li><strong>Threshold-Only Evaluations:</strong> One-sample baseline comparison against a requirement (ignores DOE structure).</li>
+              <li><strong>Multivariate DOE Evaluations:</strong> D-optimal factorial sizing ensuring <em>every</em> modeled non-block factor and interaction independently achieves target power.</li>
+            </ul>
+            <p style="margin-top:0.5rem;">
+              <strong>Execution Sequence:</strong> (1) Define response type &amp; effect sizes &rarr; (2) Construct full candidate space &amp; apply <code>is_disallowed()</code> constraints &rarr; (3) Build Sum-coded model matrix &rarr; (4) Optimize multi-start coordinate-exchange D-optimal designs &rarr; (5) Perform Coarse/Fine analytical search + Binomial GLM Likelihood-Ratio Monte Carlo validation (for proportional designs).
+            </p>
+          </div>
+
+          <div class="guide-section" id="g-prop">
+            <h2>2. Proportional-Response Path (Binary Outcomes)</h2>
+            <p>Use <code>PROPORTIONAL</code> when each run produces a binary outcome (Pass/Fail, Hit/Miss, Detect/No-Detect). Each run is modeled as Bernoulli(p_i) under a logistic regression framework:</p>
+            <div class="formula-chip">logit(p_i) = log(p_i / (1 - p_i)) = X_i' &beta;</div>
+            <h3>Key Proportional Mechanics</h3>
+            <ul>
+              <li><strong>Threshold Sizing:</strong> Uses Cohen's arcsine transformation h = 2*asin(sqrt(p1)) - 2*asin(sqrt(p0)) with a one-sample normal power approximation.</li>
+              <li><strong>Robust Local Logistic D-Optimality:</strong> Maximizes det(X'WX) where W = diag(p_i*(1-p_i)) is the Bernoulli information weight averaged across term-specific alternative scenarios.</li>
+              <li><strong>Multi-Level Factors:</strong> Uses a conservative midpoint-centered least-favorable coded-coefficient (LFC) scenario so active contrasts span the intended p0 to p1 range.</li>
+              <li><strong>Monte Carlo LRT Validation &amp; Wilson Bound:</strong> Simulates binary outcomes, fits full and reduced binomial GLMs via IRLS, and computes G2 = 2*(LL_full - LL_reduced). When <code>USE_CONSERVATIVE_MC_BOUND</code> is enabled, the one-sided Wilson lower confidence bound (e.g., 60%) must meet or exceed <code>TARGET_POWER</code>.</li>
+            </ul>
+          </div>
+
+          <div class="guide-section" id="g-cont">
+            <h2>3. Continuous-Response Path (Numerical Outcomes)</h2>
+            <p>Use <code>CONTINUOUS</code> for numerical measurements (Range, Miss Distance, Time, Latency, Error) assuming normal residuals y = X*&beta; + &epsilon;.</p>
+            <div class="formula-chip">SNR = &Delta; / &sigma; = Detectable Difference / Residual Std Dev</div>
+            <ul>
+              <li><strong>Threshold Sizing:</strong> Exact one-sample noncentral t-test power calculation.</li>
+              <li><strong>Factorial Sizing:</strong> Omnibus noncentral F-test across all non-block model terms (df1 = q, df2 = n - p), maximizing ordinary linear D-optimality det(X'X).</li>
+            </ul>
+          </div>
+
+          <div class="guide-section" id="g-modes">
+            <h2>4. Optimization Modes &amp; Full Factorial Option</h2>
+            <table>
+              <thead>
+                <tr><th>Mode</th><th>How It Works</th><th>Best Used When</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>ITERATIVE</strong></td>
+                  <td>Generates a fresh D-optimal design at every candidate run count N.</td>
+                  <td>Minimizing total run count is the top priority and unequal treatment allocation is acceptable.</td>
+                </tr>
+                <tr>
+                  <td><strong>REPLICATE</strong></td>
+                  <td>Generates a D-optimal base block and repeats it an exact integer number of cycles.</td>
+                  <td>Phased test blocks, repeatable schedules, and operational simplicity are desired.</td>
+                </tr>
+                <tr>
+                  <td><strong>FORCE FULL FACTORIAL</strong></td>
+                  <td>Forces the base block to include every feasible candidate combination once.</td>
+                  <td>Complete treatment coverage is required and the candidate space is small.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="guide-section" id="g-controls">
+            <h2>5. Blocking, Alpha &amp; Multiplicity</h2>
+            <ul>
+              <li><strong>Blocking Factor:</strong> Accounts for nuisance variation (Day, Crew, Aircraft, Site). Included in the regression model to isolate variance, but excluded from powered test requirements.</li>
+              <li><strong>Alpha (&alpha;):</strong> Type I false-positive risk. Screening tests commonly use &alpha; = 0.20; confirmatory tests often use &alpha; = 0.05 or 0.10.</li>
+              <li><strong>Multiplicity Method:</strong> <code>NONE</code> applies &alpha; independently to each term; <code>BONFERRONI</code> divides &alpha; across all modeled non-block terms (&alpha;_term = &alpha; / K).</li>
+            </ul>
+          </div>
+
+          <div class="guide-section" id="g-limits">
+            <h2>6. Limitations &amp; Validation Checklist</h2>
+            <ul>
+              <li>Assumes independent observations and fixed-effects model terms (random effects, repeated measures, or split-plot structures require mixed-effects modeling).</li>
+              <li>The exported D-optimal run order is an allocation sequence—randomize physical execution order where operationally appropriate while preserving treatment counts.</li>
+              <li>This tool supports test planning and resource estimation; it does not replace test authority, safety review, or formal statistical approval.</li>
+            </ul>
+          </div>
+
+          <div class="guide-section" id="g-faq">
+            <h2>7. Frequently Asked Questions (FAQ)</h2>
+            <div class="faq-item">
+              <div class="faq-q">Does the Threshold N determine the DOE run count?</div>
+              <div class="faq-a">No. Threshold N estimates the sample size for a single-sample comparison against baseline. Factorial N sizes the full multivariate experiment so that every modeled factor and interaction achieves target power.</div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q">Why is Factorial N often larger than Threshold N?</div>
+              <div class="faq-a">A factorial DOE must estimate multiple parameters across multiple factor levels and interactions simultaneously, requiring degrees of freedom and leverage across the entire design space.</div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q">What does a "Budget Limited" warning mean?</div>
+              <div class="faq-a">It means <code>MAX_ALLOWABLE_RUNS</code> was reached before every modeled term achieved target power. The tool outputs the best design at the ceiling along with the achieved power so test risk can be briefed transparently.</div>
+            </div>
+            <div class="faq-item">
+              <div class="faq-q">Point of Contact</div>
+              <div class="faq-a">Developed and unit-tested with 4 TES analysts. Report questions or edge cases to <strong>Lt Max Deihl</strong> (<code>maxwell.deihl.1@spaceforce.mil</code>). Current as of 10/09/2026.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="toast" id="toastMsg">Copied to clipboard!</div>
+
+<script>
+/* ============================================================================
+   1. DETERMINISTIC PRNG & MATHEMATICAL DISTRIBUTIONS (ZERO EXTERNAL LIBS)
+   ============================================================================ */
+
+class SeededRNG {
+  constructor(seed) {
+    this.state = (Number(seed) || 42) >>> 0;
+  }
+  next() {
+    let t = (this.state += 0x6D2B79F5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  choice(n, size, replace = true) {
+    const out = [];
+    if (replace) {
+      for (let i = 0; i < size; i++) out.push(Math.floor(this.next() * n));
+    } else {
+      const pool = Array.from({ length: n }, (_, i) => i);
+      for (let i = 0; i < size && pool.length > 0; i++) {
+        const idx = Math.floor(this.next() * pool.length);
+        out.push(pool[idx]);
+        pool.splice(idx, 1);
+      }
+    }
+    return out;
+  }
+  choiceFromArray(arr, size, replace = true) {
+    const idx = this.choice(arr.length, size, replace);
+    return idx.map(i => arr[i]);
+  }
+  binomial(pArray) {
+    const y = new Float64Array(pArray.length);
+    for (let i = 0; i < pArray.length; i++) {
+      y[i] = this.next() < pArray[i] ? 1.0 : 0.0;
+    }
+    return y;
+  }
+}
+
+// Log Gamma (Lanczos approximation)
+function logGamma(z) {
+  const g = 7;
+  const p = [
+    0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+    771.32342877765313, -176.61502916214059, 12.507343278686905,
+    -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7
+  ];
+  if (z < 0.5) {
+    return Math.log(Math.PI) - Math.log(Math.sin(Math.PI * z)) - logGamma(1 - z);
+  }
+  z -= 1;
+  let x = p[0];
+  for (let i = 1; i < g + 2; i++) x += p[i] / (z + i);
+  const t = z + g + 0.5;
+  return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+}
+
+// Regularized lower incomplete gamma P(a, x)
+function gammaincLower(a, x) {
+  if (x <= 0) return 0.0;
+  if (x < a + 1.0) {
+    let ap = a;
+    let del = 1.0 / a;
+    let sum = del;
+    for (let n = 1; n <= 200; n++) {
+      ap += 1.0;
+      del *= x / ap;
+      sum += del;
+      if (Math.abs(del) < Math.abs(sum) * 1e-14) break;
+    }
+    return sum * Math.exp(-x + a * Math.log(x) - logGamma(a));
+  } else {
+    let b = x + 1.0 - a;
+    let c = 1.0 / 1e-30;
+    let d = 1.0 / b;
+    let h = d;
+    for (let i = 1; i <= 200; i++) {
+      let an = -i * (i - a);
+      b += 2.0;
+      d = an * d + b;
+      if (Math.abs(d) < 1e-30) d = 1e-30;
+      c = b + an / c;
+      if (Math.abs(c) < 1e-30) c = 1e-30;
+      d = 1.0 / d;
+      let del = d * c;
+      h *= del;
+      if (Math.abs(del - 1.0) < 1e-14) break;
+    }
+    return 1.0 - h * Math.exp(-x + a * Math.log(x) - logGamma(a));
+  }
+}
+
+// Regularized incomplete beta I_x(a, b)
+function betainc(x, a, b) {
+  if (x <= 0) return 0.0;
+  if (x >= 1) return 1.0;
+  const bt = Math.exp(logGamma(a + b) - logGamma(a) - logGamma(b) + a * Math.log(x) + b * Math.log(1.0 - x));
+  if (x < (a + 1.0) / (a + b + 2.0)) {
+    return (bt * betacf(x, a, b)) / a;
+  } else {
+    return 1.0 - (bt * betacf(1.0 - x, b, a)) / b;
+  }
+}
+
+function betacf(x, a, b) {
+  const MAXIT = 200;
+  const EPS = 1e-14;
+  const FPMIN = 1e-30;
+  let qab = a + b;
+  let qap = a + 1.0;
+  let qam = a - 1.0;
+  let c = 1.0;
+  let d = 1.0 - (qab * x) / qap;
+  if (Math.abs(d) < FPMIN) d = FPMIN;
+  d = 1.0 / d;
+  let h = d;
+  for (let m = 1; m <= MAXIT; m++) {
+    let m2 = 2 * m;
+    let aa = (m * (b - m) * x) / ((qam + m2) * (a + m2));
+    d = 1.0 + aa * d;
+    if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1.0 + aa / c;
+    if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1.0 / d;
+    h *= d * c;
+    aa = (-(a + m) * (qab + m) * x) / ((a + m2) * (qap + m2));
+    d = 1.0 + aa * d;
+    if (Math.abs(d) < FPMIN) d = FPMIN;
+    c = 1.0 + aa / c;
+    if (Math.abs(c) < FPMIN) c = FPMIN;
+    d = 1.0 / d;
+    let del = d * c;
+    h *= del;
+    if (Math.abs(del - 1.0) < EPS) break;
+  }
+  return h;
+}
+
+// Standard Normal CDF & Inverse
+function normCDF(x) {
+  return 0.5 * (1.0 + erf(x / Math.SQRT2));
+}
+function erf(x) {
+  const sign = x >= 0 ? 1 : -1;
+  x = Math.abs(x);
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const t = 1.0 / (1.0 + p * x);
+  const y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+  return sign * y;
+}
+function normPPF(p) {
+  if (p <= 0) return -Infinity;
+  if (p >= 1) return Infinity;
+  const a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+  const b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+  const c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+  const d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+  const plow = 0.02425, phigh = 1 - plow;
+  let q, r;
+  if (p < plow) {
+    q = Math.sqrt(-2 * Math.log(p));
+    return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+  } else if (p <= phigh) {
+    q = p - 0.5;
+    r = q * q;
+    return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1);
+  } else {
+    q = Math.sqrt(-2 * Math.log(1 - p));
+    return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+  }
+}
+
+// Chi-Square CDF & PPF
+function chi2CDF(x, k) {
+  if (x <= 0) return 0.0;
+  return gammaincLower(0.5 * k, 0.5 * x);
+}
+function chi2PPF(p, k) {
+  let lo = 0.0, hi = Math.max(20.0, k + 12 * Math.sqrt(k));
+  while (chi2CDF(hi, k) < p) hi *= 2.0;
+  for (let i = 0; i < 65; i++) {
+    const mid = 0.5 * (lo + hi);
+    if (chi2CDF(mid, k) < p) lo = mid; else hi = mid;
+  }
+  return 0.5 * (lo + hi);
+}
+
+// Central F CDF & PPF
+function fCDF(x, df1, df2) {
+  if (x <= 0) return 0.0;
+  const u = (df1 * x) / (df1 * x + df2);
+  return betainc(u, 0.5 * df1, 0.5 * df2);
+}
+function fPPF(p, df1, df2) {
+  let lo = 0.0, hi = 10.0;
+  while (fCDF(hi, df1, df2) < p && hi < 1e9) hi *= 2.5;
+  for (let i = 0; i < 65; i++) {
+    const mid = 0.5 * (lo + hi);
+    if (fCDF(mid, df1, df2) < p) lo = mid; else hi = mid;
+  }
+  return 0.5 * (lo + hi);
+}
+
+// Noncentral Chi-Square Survival Function (1 - CDF)
+function ncx2SF(x, k, lambda) {
+  if (x <= 0) return 1.0;
+  if (lambda <= 1e-12) return 1.0 - chi2CDF(x, k);
+  const halfLambda = 0.5 * lambda;
+  const jMode = Math.max(0, Math.floor(halfLambda));
+  let logWMode = -halfLambda + jMode * Math.log(halfLambda) - logGamma(jMode + 1);
+  let cdf = 0.0;
+
+  let w = Math.exp(logWMode);
+  for (let j = jMode; j < jMode + 500; j++) {
+    if (j > jMode) w *= halfLambda / j;
+    const term = w * chi2CDF(x, k + 2 * j);
+    cdf += term;
+    if (w < 1e-14 && j > jMode + 10) break;
+  }
+  w = Math.exp(logWMode);
+  for (let j = jMode - 1; j >= 0; j--) {
+    w *= (j + 1) / halfLambda;
+    const term = w * chi2CDF(x, k + 2 * j);
+    cdf += term;
+    if (w < 1e-14) break;
+  }
+  return Math.max(0.0, Math.min(1.0, 1.0 - cdf));
+}
+
+// Noncentral F Survival Function (1 - CDF)
+function ncfSF(x, df1, df2, lambda) {
+  if (x <= 0) return 1.0;
+  if (lambda <= 1e-12) return 1.0 - fCDF(x, df1, df2);
+  const u = (df1 * x) / (df1 * x + df2);
+  const halfLambda = 0.5 * lambda;
+  const jMode = Math.max(0, Math.floor(halfLambda));
+  let logWMode = -halfLambda + jMode * Math.log(halfLambda) - logGamma(jMode + 1);
+  let cdf = 0.0;
+
+  let w = Math.exp(logWMode);
+  for (let j = jMode; j < jMode + 500; j++) {
+    if (j > jMode) w *= halfLambda / j;
+    cdf += w * betainc(u, 0.5 * df1 + j, 0.5 * df2);
+    if (w < 1e-14 && j > jMode + 10) break;
+  }
+  w = Math.exp(logWMode);
+  for (let j = jMode - 1; j >= 0; j--) {
+    w *= (j + 1) / halfLambda;
+    cdf += w * betainc(u, 0.5 * df1 + j, 0.5 * df2);
+    if (w < 1e-14) break;
+  }
+  return Math.max(0.0, Math.min(1.0, 1.0 - cdf));
+}
+
+// Student's t PPF
+function tPPF(p, df) {
+  if (p === 0.5) return 0.0;
+  const sign = p < 0.5 ? -1 : 1;
+  const target = p < 0.5 ? 2 * p : 2 * (1 - p);
+  const fVal = fPPF(1.0 - target, 1, df);
+  return sign * Math.sqrt(Math.max(0, fVal));
+}
+
+/* ============================================================================
+   2. MATRIX & LINEAR ALGEBRA UTILITIES
+   ============================================================================ */
+
+function matZeros(rows, cols) {
+  return Array.from({ length: rows }, () => new Float64Array(cols));
+}
+
+function matXtX(X) {
+  const r = X.length, p = X[0].length;
+  const M = matZeros(p, p);
+  for (let i = 0; i < r; i++) {
+    const row = X[i];
+    for (let j = 0; j < p; j++) {
+      const rj = row[j];
+      if (rj === 0) continue;
+      for (let k = j; k < p; k++) {
+        M[j][k] += rj * row[k];
+      }
+    }
+  }
+  for (let j = 0; j < p; j++) {
+    for (let k = 0; k < j; k++) M[j][k] = M[k][j];
+  }
+  return M;
+}
+
+function matXtWX(X, w) {
+  const r = X.length, p = X[0].length;
+  const M = matZeros(p, p);
+  for (let i = 0; i < r; i++) {
+    const row = X[i];
+    const wi = w[i];
+    for (let j = 0; j < p; j++) {
+      const w_rj = wi * row[j];
+      if (w_rj === 0) continue;
+      for (let k = j; k < p; k++) {
+        M[j][k] += w_rj * row[k];
+      }
+    }
+  }
+  for (let j = 0; j < p; j++) {
+    for (let k = 0; k < j; k++) M[j][k] = M[k][j];
+  }
+  return M;
+}
+
+function matClone(A) {
+  return A.map(row => new Float64Array(row));
+}
+
+function safeLogDet(M) {
+  const n = M.length;
+  const A = matClone(M);
+  let sign = 1;
+  let logDet = 0.0;
+
+  for (let i = 0; i < n; i++) {
+    let maxRow = i;
+    let maxVal = Math.abs(A[i][i]);
+    for (let k = i + 1; k < n; k++) {
+      if (Math.abs(A[k][i]) > maxVal) {
+        maxVal = Math.abs(A[k][i]);
+        maxRow = k;
+      }
+    }
+    if (maxVal < 1e-12) return -Infinity;
+    if (maxRow !== i) {
+      const tmp = A[i]; A[i] = A[maxRow]; A[maxRow] = tmp;
+      sign = -sign;
+    }
+    const pivot = A[i][i];
+    if (pivot < 0) sign = -sign;
+    logDet += Math.log(Math.abs(pivot));
+
+    for (let k = i + 1; k < n; k++) {
+      const factor = A[k][i] / pivot;
+      for (let j = i + 1; j < n; j++) {
+        A[k][j] -= factor * A[i][j];
+      }
+    }
+  }
+  if (sign <= 0 || !Number.isFinite(logDet)) return -Infinity;
+  return logDet;
+}
+
+function matrixRank(M, tol = 1e-9) {
+  const r = M.length, c = M[0].length;
+  const A = matClone(M);
+  let rank = 0;
+  const rowUsed = new Array(r).fill(false);
+
+  for (let col = 0; col < c; col++) {
+    let pivotRow = -1;
+    let maxVal = tol;
+    for (let row = 0; row < r; row++) {
+      if (!rowUsed[row] && Math.abs(A[row][col]) > maxVal) {
+        maxVal = Math.abs(A[row][col]);
+        pivotRow = row;
+      }
+    }
+    if (pivotRow === -1) continue;
+    rowUsed[pivotRow] = true;
+    rank++;
+    const pivot = A[pivotRow][col];
+    for (let j = col; j < c; j++) A[pivotRow][j] /= pivot;
+    for (let row = 0; row < r; row++) {
+      if (row !== pivotRow && Math.abs(A[row][col]) > 1e-14) {
+        const factor = A[row][col];
+        for (let j = col; j < c; j++) A[row][j] -= factor * A[pivotRow][j];
+      }
+    }
+  }
+  return rank;
+}
+
+function matInv(M, ridge = 0.0) {
+  const n = M.length;
+  const A = matZeros(n, 2 * n);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) A[i][j] = M[i][j] + (i === j ? ridge : 0.0);
+    A[i][n + i] = 1.0;
+  }
+
+  for (let i = 0; i < n; i++) {
+    let pivotRow = i;
+    let maxVal = Math.abs(A[i][i]);
+    for (let k = i + 1; k < n; k++) {
+      if (Math.abs(A[k][i]) > maxVal) {
+        maxVal = Math.abs(A[k][i]);
+        pivotRow = k;
+      }
+    }
+    if (maxVal < 1e-12) return null;
+    if (pivotRow !== i) {
+      const tmp = A[i]; A[i] = A[pivotRow]; A[pivotRow] = tmp;
+    }
+    const pivot = A[i][i];
+    for (let j = 0; j < 2 * n; j++) A[i][j] /= pivot;
+    for (let k = 0; k < n; k++) {
+      if (k !== i) {
+        const factor = A[k][i];
+        for (let j = 0; j < 2 * n; j++) A[k][j] -= factor * A[i][j];
+      }
+    }
+  }
+
+  const Inv = matZeros(n, n);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) Inv[i][j] = A[i][n + j];
+  }
+  return Inv;
+}
+
+function matPinvSymmetric(M) {
+  return matInv(M, 0.0) || matInv(M, 1e-9) || matZeros(M.length, M.length);
+}
+
+/* ============================================================================
+   3. SUM-CODED MODEL MATRIX (PATSY C(Factor, Sum) EQUIVALENT)
+   ============================================================================ */
+
+function getCombinations(arr, k) {
+  if (k === 1) return arr.map(e => [e]);
+  const combs = [];
+  for (let i = 0; i <= arr.length - k; i++) {
+    const head = arr[i];
+    const tailCombs = getCombinations(arr.slice(i + 1), k - 1);
+    for (const tc of tailCombs) combs.push([head, ...tc]);
+  }
+  return combs;
+}
+
+function cartesianProduct(arrays) {
+  return arrays.reduce((acc, curr) => {
+    const res = [];
+    for (const a of acc) {
+      for (const b of curr) res.push([...a, b]);
+    }
+    return res;
+  }, [[]]);
+}
+
+function buildSumCodedDesignMatrix(candidateRows, factorsDict, blockFactor, interactionOrder) {
+  const sortedLevels = {};
+  for (const [fName, levels] of Object.entries(factorsDict)) {
+    sortedLevels[fName] = [...levels].sort();
+  }
+
+  const nonBlockFactors = Object.keys(factorsDict).filter(f => f !== blockFactor);
+  if (nonBlockFactors.length === 0) {
+    throw new Error("At least one non-block factor is required.");
+  }
+
+  const columnNames = ["Intercept"];
+  const termGroups = {};
+  const termDefinitions = [];
+
+  let blockTermName = null;
+  if (blockFactor) {
+    blockTermName = `C(${blockFactor}, Sum)`;
+    termDefinitions.push({
+      termName: blockTermName,
+      factors: [blockFactor],
+      isBlock: true
+    });
+  }
+
+  const maxOrder = Math.min(interactionOrder, nonBlockFactors.length);
+  for (let order = 1; order <= maxOrder; order++) {
+    const factorCombos = getCombinations(nonBlockFactors, order);
+    for (const fCombo of factorCombos) {
+      const tName = fCombo.map(f => `C(${f}, Sum)`).join(":");
+      termDefinitions.push({
+        termName: tName,
+        factors: fCombo,
+        isBlock: false
+      });
+    }
+  }
+
+  function encodeFactorSum(fName, val) {
+    const lvls = sortedLevels[fName];
+    const K = lvls.length;
+    const out = new Float64Array(K - 1);
+    const lastLevel = lvls[K - 1];
+    if (val === lastLevel) {
+      out.fill(-1.0);
+    } else {
+      const idx = lvls.indexOf(val);
+      if (idx >= 0 && idx < K - 1) out[idx] = 1.0;
+    }
+    return out;
+  }
+
+  let currentCol = 1;
+  for (const def of termDefinitions) {
+    const { termName, factors, isBlock } = def;
+    const levelIndexLists = factors.map(f => {
+      const lvls = sortedLevels[f];
+      return lvls.slice(0, lvls.length - 1).map((l, idx) => ({ f, label: l, idx }));
+    });
+    const combos = cartesianProduct(levelIndexLists);
+    const startCol = currentCol;
+    for (const c of combos) {
+      const colLabel = c.map(item => `C(${item.f}, Sum)[S.${item.label}]`).join(":");
+      columnNames.push(colLabel);
+      currentCol++;
+    }
+    const stopCol = currentCol;
+    def.combos = combos;
+    def.startCol = startCol;
+    def.stopCol = stopCol;
+
+    if (!isBlock) {
+      const indices = [];
+      for (let idx = startCol; idx < stopCol; idx++) indices.push(idx);
+      termGroups[termName] = indices;
+    }
+  }
+
+  const nRows = candidateRows.length;
+  const pParams = columnNames.length;
+  const X_candidate = matZeros(nRows, pParams);
+
+  for (let r = 0; r < nRows; r++) {
+    const rowObj = candidateRows[r];
+    X_candidate[r][0] = 1.0;
+
+    const encodedFactors = {};
+    for (const fName of Object.keys(factorsDict)) {
+      encodedFactors[fName] = encodeFactorSum(fName, rowObj[fName]);
+    }
+
+    for (const def of termDefinitions) {
+      let colPtr = def.startCol;
+      for (const c of def.combos) {
+        let prod = 1.0;
+        for (const item of c) {
+          prod *= encodedFactors[item.f][item.idx];
+        }
+        X_candidate[r][colPtr++] = prod;
+      }
+    }
+  }
+
+  const factorialComponent = `(${nonBlockFactors.map(f => `C(${f}, Sum)`).join(" + ")})**${interactionOrder}`;
+  const formula = blockFactor ? `C(${blockFactor}, Sum) + ${factorialComponent}` : factorialComponent;
+
+  return {
+    X_candidate,
+    columnNames,
+    termGroups,
+    pParams,
+    formula,
+    blockTermName
+  };
+}
+
+/* ============================================================================
+   4. STATISTICAL SIZING & POWER FUNCTIONS (FAITHFUL NOTEBOOK PORT)
+   ============================================================================ */
+
+function logit(p) {
+  const c = Math.max(1e-10, Math.min(1.0 - 1e-10, p));
+  return Math.log(c / (1.0 - c));
+}
+
+function expit(v) {
+  const c = Math.max(-30.0, Math.min(30.0, v));
+  return 1.0 / (1.0 + Math.exp(-c));
+}
+
+function proportionEffectSize(p1, p0) {
+  return 2.0 * Math.asin(Math.sqrt(p1)) - 2.0 * Math.asin(Math.sqrt(p0));
+}
+
+function wilsonLowerBound(successes, total, confidence) {
+  if (total <= 0) return 0.0;
+  const z = normPPF(confidence);
+  const phat = successes / total;
+  const denom = 1.0 + (z * z) / total;
+  const center = phat + (z * z) / (2.0 * total);
+  const margin = z * Math.sqrt((phat * (1.0 - phat)) / total + (z * z) / (4.0 * total * total));
+  return Math.max(0.0, (center - margin) / denom);
+}
+
+function thresholdPowerAtN(cfg, altValue, nRuns) {
+  const twoSided = cfg.TEST_SIDEDNESS === "two-sided";
+  if (cfg.RESPONSE_TYPE === "PROPORTIONAL") {
+    const es = Math.abs(proportionEffectSize(altValue, cfg.P0));
+    const zCrit = normPPF(1.0 - (twoSided ? cfg.ALPHA / 2.0 : cfg.ALPHA));
+    const shift = es * Math.sqrt(nRuns);
+    let pwr = 1.0 - normCDF(zCrit - shift);
+    if (twoSided) pwr += normCDF(-zCrit - shift);
+    return Math.max(0.0, Math.min(1.0, pwr));
+  } else {
+    const df = nRuns - 1;
+    if (df < 1) return 0.0;
+    const es = Math.abs(altValue);
+    const nc = es * Math.sqrt(nRuns);
+    if (twoSided) {
+      const fCrit = fPPF(1.0 - cfg.ALPHA, 1, df);
+      return ncfSF(fCrit, 1, df, nc * nc);
+    } else {
+      const tCrit = tPPF(1.0 - cfg.ALPHA, df);
+      const fCrit = tCrit * tCrit;
+      if (tCrit >= 0) {
+        return ncfSF(fCrit, 1, df, nc * nc);
+      }
+      return 1.0 - normCDF(tCrit - nc);
+    }
+  }
+}
+
+function thresholdSampleSize(cfg, altValue) {
+  if (cfg.RESPONSE_TYPE === "PROPORTIONAL") {
+    const es = Math.abs(proportionEffectSize(altValue, cfg.P0));
+    if (es <= 0) return Infinity;
+    const twoSided = cfg.TEST_SIDEDNESS === "two-sided";
+    const zAlpha = normPPF(1.0 - (twoSided ? cfg.ALPHA / 2.0 : cfg.ALPHA));
+    const zBeta = normPPF(cfg.TARGET_POWER);
+    let nEst = Math.pow((zAlpha + zBeta) / es, 2);
+    return Math.max(2, Math.ceil(nEst));
+  } else {
+    const es = Math.abs(altValue);
+    if (es <= 0) return Infinity;
+    for (let n = 2; n <= 50000; n++) {
+      if (thresholdPowerAtN(cfg, altValue, n) >= cfg.TARGET_POWER) return n;
+    }
+    return Infinity;
+  }
+}
+
+function leastFavorableTermVector(invInfo, indices, betaMagnitude) {
+  const k = indices.length;
+  const covSub = matZeros(k, k);
+  for (let i = 0; i < k; i++) {
+    for (let j = 0; j < k; j++) {
+      covSub[i][j] = invInfo[indices[i]][indices[j]];
+    }
+  }
+  const precSub = matPinvSymmetric(covSub);
+  let minDiag = Infinity;
+  let localPos = 0;
+  for (let i = 0; i < k; i++) {
+    if (precSub[i][i] < minDiag) {
+      minDiag = precSub[i][i];
+      localPos = i;
+    }
+  }
+  const betaSub = new Float64Array(k);
+  betaSub[localPos] = betaMagnitude;
+  const noncentrality = Math.max(0.0, betaMagnitude * betaMagnitude * precSub[localPos][localPos]);
+  return { betaSub, noncentrality };
+}
+
+function effectiveAlpha(cfg, numTerms) {
+  if (cfg.MULTIPLICITY_METHOD === "BONFERRONI") return cfg.ALPHA / numTerms;
+  return cfg.ALPHA;
+}
+
+function continuousOmnibusPower(cfg, X, termGroups, effectSize) {
+  const nRuns = X.length, pParams = X[0].length;
+  if (nRuns <= pParams) return { minPower: 0.0, termPower: {} };
+  const info = matXtX(X);
+  if (matrixRank(info) < pParams) return { minPower: 0.0, termPower: {} };
+
+  const invInfo = matPinvSymmetric(info);
+  const termKeys = Object.keys(termGroups);
+  const alphaTerm = effectiveAlpha(cfg, termKeys.length);
+  const dfError = nRuns - pParams;
+  const termPower = {};
+  let minPower = 1.0;
+
+  for (const termName of termKeys) {
+    const indices = termGroups[termName];
+    const betaMag = Math.abs(effectSize) / 2.0;
+    const { noncentrality } = leastFavorableTermVector(invInfo, indices, betaMag);
+    const dfTerm = indices.length;
+    const critVal = fPPF(1.0 - alphaTerm, dfTerm, dfError);
+    const pwr = Math.max(0.0, Math.min(1.0, ncfSF(critVal, dfTerm, dfError, noncentrality)));
+    termPower[termName] = pwr;
+    if (pwr < minPower) minPower = pwr;
+  }
+  return { minPower, termPower };
+}
+
+function proportionalTermScenarios(X, termGroups, p0, p1) {
+  const nRuns = X.length, pParams = X[0].length;
+  const w0 = Math.max(1e-12, p0 * (1.0 - p0));
+  const xtx = matXtX(X);
+  const baseInfo = matZeros(pParams, pParams);
+  for (let i = 0; i < pParams; i++) {
+    for (let j = 0; j < pParams; j++) baseInfo[i][j] = w0 * xtx[i][j];
+  }
+  const invBaseInfo = matPinvSymmetric(baseInfo);
+  const logitP0 = logit(p0);
+  const logitP1 = logit(p1);
+  const midpointLogit = 0.5 * (logitP0 + logitP1);
+  const halfLogitDiff = 0.5 * (logitP1 - logitP0);
+
+  const scenarios = {};
+  for (const [termName, indices] of Object.entries(termGroups)) {
+    const betaTrue = new Float64Array(pParams);
+    let scenarioType = "";
+    if (indices.length === 1) {
+      betaTrue[0] = midpointLogit;
+      betaTrue[indices[0]] = halfLogitDiff;
+      scenarioType = "two-level endpoint";
+    } else {
+      const { betaSub } = leastFavorableTermVector(invBaseInfo, indices, halfLogitDiff);
+      betaTrue[0] = midpointLogit;
+      for (let k = 0; k < indices.length; k++) betaTrue[indices[k]] = betaSub[k];
+      scenarioType = "multi-df coded LFC";
+    }
+
+    const probabilities = new Float64Array(nRuns);
+    for (let i = 0; i < nRuns; i++) {
+      let eta = 0.0;
+      const row = X[i];
+      for (let j = 0; j < pParams; j++) eta += row[j] * betaTrue[j];
+      probabilities[i] = expit(eta);
+    }
+
+    scenarios[termName] = {
+      indices,
+      betaTrue,
+      probabilities,
+      scenarioType
+    };
+  }
+  return scenarios;
+}
+
+function proportionalDesignWeights(problem, p0, p1) {
+  const scenarios = proportionalTermScenarios(problem.X_candidate, problem.termGroups, p0, p1);
+  const keys = Object.keys(scenarios);
+  const nCand = problem.candidateCount;
+  const weights = new Float64Array(nCand);
+  if (keys.length === 0) {
+    weights.fill(1.0);
+    return weights;
+  }
+  for (let i = 0; i < nCand; i++) {
+    let sum = 0.0;
+    for (const k of keys) {
+      const p = scenarios[k].probabilities[i];
+      sum += p * (1.0 - p);
+    }
+    weights[i] = Math.max(1e-12, sum / keys.length);
+  }
+  return weights;
+}
+
+function proportionalApproximatePower(cfg, X, termGroups, p0, p1) {
+  const nRuns = X.length, pParams = X[0].length;
+  if (nRuns <= pParams) return { minPower: 0.0, termPower: {} };
+  const termKeys = Object.keys(termGroups);
+  const alphaTerm = effectiveAlpha(cfg, termKeys.length);
+  const scenarios = proportionalTermScenarios(X, termGroups, p0, p1);
+  const termPower = {};
+  let minPower = 1.0;
+
+  for (const termName of termKeys) {
+    const sc = scenarios[termName];
+    const indices = sc.indices;
+    const probs = sc.probabilities;
+    const weights = new Float64Array(nRuns);
+    for (let i = 0; i < nRuns; i++) weights[i] = probs[i] * (1.0 - probs[i]);
+
+    const info = matXtWX(X, weights);
+    if (matrixRank(info) < pParams) {
+      termPower[termName] = 0.0;
+      minPower = 0.0;
+      continue;
+    }
+    const invInfo = matPinvSymmetric(info);
+    const k = indices.length;
+    const covSub = matZeros(k, k);
+    for (let a = 0; a < k; a++) {
+      for (let b = 0; b < k; b++) covSub[a][b] = invInfo[indices[a]][indices[b]];
+    }
+    const precSub = matPinvSymmetric(covSub);
+    let noncentrality = 0.0;
+    for (let a = 0; a < k; a++) {
+      const ba = sc.betaTrue[indices[a]];
+      for (let b = 0; b < k; b++) {
+        noncentrality += ba * precSub[a][b] * sc.betaTrue[indices[b]];
+      }
+    }
+    const critVal = chi2PPF(1.0 - alphaTerm, k);
+    const pwr = Math.max(0.0, Math.min(1.0, ncx2SF(critVal, k, Math.max(0.0, noncentrality))));
+    termPower[termName] = pwr;
+    if (pwr < minPower) minPower = pwr;
+  }
+  return { minPower, termPower };
+}
+
+function fitBinomialGLM_LLF(y, X, maxIter = 25) {
+  const n = X.length, p = X[0].length;
+  let beta = new Float64Array(p);
+  const mu = new Float64Array(n);
+  const w = new Float64Array(n);
+
+  for (let iter = 0; iter < maxIter; iter++) {
+    for (let i = 0; i < n; i++) {
+      let eta = 0.0;
+      const row = X[i];
+      for (let j = 0; j < p; j++) eta += row[j] * beta[j];
+      const pi = expit(eta);
+      mu[i] = pi;
+      w[i] = Math.max(1e-9, pi * (1.0 - pi));
+    }
+
+    const xtwx = matXtWX(X, w);
+    const inv = matInv(xtwx, 1e-8);
+    if (!inv) return null;
+
+    const g = new Float64Array(p);
+    for (let i = 0; i < n; i++) {
+      const diff = y[i] - mu[i];
+      const row = X[i];
+      for (let j = 0; j < p; j++) g[j] += row[j] * diff;
+    }
+
+    let maxStep = 0.0;
+    for (let j = 0; j < p; j++) {
+      let delta = 0.0;
+      for (let k = 0; k < p; k++) delta += inv[j][k] * g[k];
+      beta[j] += delta;
+      if (Math.abs(delta) > maxStep) maxStep = Math.abs(delta);
+    }
+    if (maxStep < 1e-5) break;
+  }
+
+  let llf = 0.0;
+  for (let i = 0; i < n; i++) {
+    let eta = 0.0;
+    const row = X[i];
+    for (let j = 0; j < p; j++) eta += row[j] * beta[j];
+    const pi = Math.max(1e-12, Math.min(1.0 - 1e-12, expit(eta)));
+    llf += y[i] === 1.0 ? Math.log(pi) : Math.log(1.0 - pi);
+  }
+  return Number.isFinite(llf) ? llf : null;
+}
+
+function proportionalMcPower(cfg, X, termGroups, p0, p1, nSims, rng) {
+  const nRuns = X.length, pParams = X[0].length;
+  if (nRuns <= pParams) return { minPower: 0.0, termPower: {}, termDetails: {} };
+
+  const termKeys = Object.keys(termGroups);
+  const alphaTerm = effectiveAlpha(cfg, termKeys.length);
+  const scenarios = proportionalTermScenarios(X, termGroups, p0, p1);
+
+  const termPower = {};
+  const termDetails = {};
+  let minPower = 1.0;
+
+  for (const termName of termKeys) {
+    const sc = scenarios[termName];
+    const indicesSet = new Set(sc.indices);
+    const reducedCols = [];
+    for (let c = 0; c < pParams; c++) {
+      if (!indicesSet.has(c)) reducedCols.push(c);
+    }
+
+    const X_reduced = matZeros(nRuns, reducedCols.length);
+    for (let i = 0; i < nRuns; i++) {
+      for (let j = 0; j < reducedCols.length; j++) {
+        X_reduced[i][j] = X[i][reducedCols[j]];
+      }
+    }
+
+    const critVal = chi2PPF(1.0 - alphaTerm, sc.indices.length);
+    let sigCount = 0;
+    let fitFailures = 0;
+
+    for (let s = 0; s < nSims; s++) {
+      const y = rng.binomial(sc.probabilities);
+      let sumY = 0;
+      for (let i = 0; i < nRuns; i++) sumY += y[i];
+      if (sumY === 0 || sumY === nRuns) {
+        fitFailures++;
+        continue;
+      }
+
+      const llfFull = fitBinomialGLM_LLF(y, X);
+      const llfRed = fitBinomialGLM_LLF(y, X_reduced);
+      if (llfFull === null || llfRed === null) {
+        fitFailures++;
+        continue;
+      }
+      const stat = 2.0 * (llfFull - llfRed);
+      if (Number.isFinite(stat) && stat > critVal) sigCount++;
+    }
+
+    const estPower = sigCount / nSims;
+    termPower[termName] = estPower;
+    if (estPower < minPower) minPower = estPower;
+
+    termDetails[termName] = {
+      significant: sigCount,
+      nSims,
+      fitFailures,
+      lowerBound: wilsonLowerBound(sigCount, nSims, cfg.MC_CONFIDENCE),
+      scenarioType: sc.scenarioType
+    };
+  }
+
+  return { minPower, termPower, termDetails };
+}
+
+function meetsMcRequirement(cfg, estPower, termDetails) {
+  if (!cfg.USE_CONSERVATIVE_MC_BOUND) return estPower >= cfg.TARGET_POWER;
+  const keys = Object.keys(termDetails);
+  if (keys.length === 0) return false;
+  let minLB = 1.0;
+  for (const k of keys) {
+    if (termDetails[k].lowerBound < minLB) minLB = termDetails[k].lowerBound;
+  }
+  return minLB >= cfg.TARGET_POWER;
+}
+
+/* ============================================================================
+   5. MULTI-START EXACT D-OPTIMAL COORDINATE EXCHANGE ENGINE
+   ============================================================================ */
+
+function generateDOptimalDesign(cfg, problem, nRuns, candidateWeights = null) {
+  const nCand = problem.candidateCount;
+  const pParams = problem.pParams;
+  const weights = new Float64Array(nCand);
+  if (!candidateWeights) {
+    weights.fill(1.0);
+  } else {
+    for (let i = 0; i < nCand; i++) weights[i] = Math.max(1e-12, candidateWeights[i]);
+  }
+
+  const Z_candidate = matZeros(nCand, pParams);
+  for (let i = 0; i < nCand; i++) {
+    const sw = Math.sqrt(weights[i]);
+    for (let j = 0; j < pParams; j++) {
+      Z_candidate[i][j] = problem.X_candidate[i][j] * sw;
+    }
+  }
+
+  let bestIndices = null;
+  let bestLogDet = -Infinity;
+
+  for (let restart = 0; restart < cfg.N_RESTARTS; restart++) {
+    const rng = new SeededRNG(cfg.RANDOM_SEED + 100003 * nRuns + restart);
+    let selectedIndices = [];
+
+    if (!cfg.BLOCKING_FACTOR) {
+      selectedIndices = rng.choice(nCand, nRuns, nRuns > nCand);
+    } else {
+      const blockLevels = cfg.FACTORS[cfg.BLOCKING_FACTOR];
+      const nBlocks = blockLevels.length;
+      const baseRuns = Math.floor(nRuns / nBlocks);
+      const rem = nRuns % nBlocks;
+      for (let pos = 0; pos < nBlocks; pos++) {
+        const bLevel = blockLevels[pos];
+        const req = baseRuns + (pos < rem ? 1 : 0);
+        const candsInBlock = [];
+        for (let idx = 0; idx < nCand; idx++) {
+          if (problem.candidateRows[idx][cfg.BLOCKING_FACTOR] === bLevel) candsInBlock.push(idx);
+        }
+        const chosen = rng.choiceFromArray(candsInBlock, req, req > candsInBlock.length);
+        selectedIndices.push(...chosen);
+      }
+    }
+
+    const Z = selectedIndices.map(idx => new Float64Array(Z_candidate[idx]));
+    let info = matXtX(Z);
+    let currentLogDet = safeLogDet(info);
+
+    for (let pass = 0; pass < cfg.MAX_EXCHANGE_PASSES; pass++) {
+      let improved = false;
+      for (let rowPos = 0; rowPos < nRuns; rowPos++) {
+        const currIdx = selectedIndices[rowPos];
+        const remZ = Z[rowPos];
+
+        let candIndices = [];
+        if (!cfg.BLOCKING_FACTOR) {
+          for (let i = 0; i < nCand; i++) candIndices.push(i);
+        } else {
+          const selBlock = problem.candidateRows[currIdx][cfg.BLOCKING_FACTOR];
+          for (let i = 0; i < nCand; i++) {
+            if (problem.candidateRows[i][cfg.BLOCKING_FACTOR] === selBlock) candIndices.push(i);
+          }
+        }
+
+        if (nRuns <= nCand) {
+          const occupied = new Set(selectedIndices);
+          occupied.delete(currIdx);
+          candIndices = candIndices.filter(idx => !occupied.has(idx));
+        }
+        if (candIndices.length === 0) continue;
+
+        const baseInfo = matClone(info);
+        for (let a = 0; a < pParams; a++) {
+          for (let b = 0; b < pParams; b++) baseInfo[a][b] -= remZ[a] * remZ[b];
+        }
+        const baseLogDet = safeLogDet(baseInfo);
+        let bestIdx = currIdx;
+        let bestRowLogDet = currentLogDet;
+
+        if (Number.isFinite(baseLogDet)) {
+          const baseInv = matInv(baseInfo, 0.0);
+          if (baseInv) {
+            for (const cIdx of candIndices) {
+              const cz = Z_candidate[cIdx];
+              let qf = 0.0;
+              for (let a = 0; a < pParams; a++) {
+                const cza = cz[a];
+                if (cza === 0) continue;
+                for (let b = 0; b < pParams; b++) qf += cza * baseInv[a][b] * cz[b];
+              }
+              const propLogDet = baseLogDet + Math.log(Math.max(1e-300, 1.0 + qf));
+              if (cIdx !== currIdx && propLogDet > bestRowLogDet + 1e-10) {
+                bestRowLogDet = propLogDet;
+                bestIdx = cIdx;
+              }
+            }
+          }
+        } else {
+          for (const cIdx of candIndices) {
+            if (cIdx === currIdx) continue;
+            const cz = Z_candidate[cIdx];
+            const propInfo = matClone(baseInfo);
+            for (let a = 0; a < pParams; a++) {
+              for (let b = 0; b < pParams; b++) propInfo[a][b] += cz[a] * cz[b];
+            }
+            const propLogDet = safeLogDet(propInfo);
+            if (propLogDet > bestRowLogDet + 1e-10) {
+              bestRowLogDet = propLogDet;
+              bestIdx = cIdx;
+            }
+          }
+        }
+
+        if (bestIdx !== currIdx) {
+          const repZ = Z_candidate[bestIdx];
+          for (let a = 0; a < pParams; a++) {
+            for (let b = 0; b < pParams; b++) {
+              info[a][b] = info[a][b] - remZ[a] * remZ[b] + repZ[a] * repZ[b];
+            }
+          }
+          Z[rowPos] = new Float64Array(repZ);
+          selectedIndices[rowPos] = bestIdx;
+          currentLogDet = bestRowLogDet;
+          improved = true;
+        }
+      }
+      if (!improved) break;
+    }
+
+    if (currentLogDet > bestLogDet) {
+      bestLogDet = currentLogDet;
+      bestIndices = [...selectedIndices];
+    }
+  }
+
+  const finalX = bestIndices.map(idx => new Float64Array(problem.X_candidate[idx]));
+  const finalWeights = bestIndices.map(idx => weights[idx]);
+  const finalRows = bestIndices.map(idx => ({ ...problem.candidateRows[idx] }));
+  const singular = matrixRank(finalX) < pParams;
+  const dCriterion = (singular || !Number.isFinite(bestLogDet))
+    ? 0.0
+    : Math.exp((bestLogDet - pParams * Math.log(nRuns)) / pParams);
+
+  return {
+    designRows: finalRows,
+    X: finalX,
+    selectedIndices: bestIndices,
+    logDet: bestLogDet,
+    dCriterion,
+    singular,
+    rowWeights: finalWeights
+  };
+}
+
+function replicatedDesign(baseResult, nRuns) {
+  const baseN = baseResult.designRows.length;
+  const designRows = [];
+  const X = [];
+  const rowWeights = [];
+
+  for (let i = 0; i < nRuns; i++) {
+    const idx = i % baseN;
+    designRows.push({ ...baseResult.designRows[idx] });
+    X.push(new Float64Array(baseResult.X[idx]));
+    rowWeights.push(baseResult.rowWeights[idx]);
+  }
+
+  const pParams = X[0].length;
+  const Z = matZeros(nRuns, pParams);
+  for (let i = 0; i < nRuns; i++) {
+    const sw = Math.sqrt(Math.max(1e-12, rowWeights[i]));
+    for (let j = 0; j < pParams; j++) Z[i][j] = X[i][j] * sw;
+  }
+
+  const logDet = safeLogDet(matXtX(Z));
+  const singular = matrixRank(X) < pParams;
+  const dCriterion = (singular || !Number.isFinite(logDet))
+    ? 0.0
+    : Math.exp((logDet - pParams * Math.log(nRuns)) / pParams);
+
+  return {
+    designRows,
+    X,
+    selectedIndices: [],
+    logDet,
+    dCriterion,
+    singular,
+    rowWeights
+  };
+}
+
+/* ============================================================================
+   6. APPLICATION STATE & UI CONTROLS
+   ============================================================================ */
+
+let APP_STATE = {
+  factors: [
+    { name: "F", levels: ["F1", "F2", "F3"] },
+    { name: "D", levels: ["D1", "D2", "D3", "D4"] }
+  ],
+  visualRules: [],
+  manualDisallowedKeys: new Set(),
+  lastRunResults: null,
+  lastProblem: null,
+  lastConfig: null,
+  logs: []
+};
+
+function showToast(msg) {
+  const t = document.getElementById("toastMsg");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2300);
+}
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll(".tab-pane").forEach(el => el.classList.remove("active"));
+  document.querySelectorAll(".nav-tab").forEach(el => el.classList.remove("active"));
+  document.getElementById("tab-" + tabId).classList.add("active");
+  btn.classList.add("active");
+  if (tabId === "constraints") refreshCandidatePreview();
+}
+
+function toggleResponseSettings() {
+  const rt = document.getElementById("RESPONSE_TYPE").value;
+  document.getElementById("proportionalInputs").style.display = rt === "PROPORTIONAL" ? "grid" : "none";
+  document.getElementById("continuousInputs").style.display = rt === "CONTINUOUS" ? "grid" : "none";
+  document.getElementById("MATRIX_SIZING_VALUE").value = rt === "PROPORTIONAL" ? "0.20" : "1.00";
+}
+
+function handleFullFactorialToggle() {
+  const ff = document.getElementById("FORCE_FULL_FACTORIAL").checked;
+  if (ff) {
+    document.getElementById("OPTIMIZATION_MODE").value = "REPLICATE";
+  }
+}
+
+function renderFactorsEditor() {
+  const container = document.getElementById("factorsContainer");
+  container.innerHTML = "";
+  APP_STATE.factors.forEach((f, idx) => {
+    const div = document.createElement("div");
+    div.className = "factor-item";
+    div.innerHTML = `
+      <input type="text" value="${f.name}" placeholder="Factor" onchange="updateFactorName(${idx}, this.value)">
+      <input type="text" value="${f.levels.join(', ')}" placeholder="Levels (comma-separated)" onchange="updateFactorLevels(${idx}, this.value)">
+      <button class="btn-icon" title="Remove Factor" onclick="removeFactorRow(${idx})">&times;</button>
+    `;
+    container.appendChild(div);
+  });
+  updateBlockingDropdown();
+  renderVisualRuleDropdowns();
+  refreshCandidatePreview();
+}
+
+function updateFactorName(idx, val) {
+  const clean = val.trim() || `Factor_${idx + 1}`;
+  APP_STATE.factors[idx].name = clean;
+  renderFactorsEditor();
+}
+
+function updateFactorLevels(idx, val) {
+  const lvls = val.split(",").map(s => s.trim()).filter(Boolean);
+  if (lvls.length < 2) {
+    alert("Each factor must have at least 2 levels.");
+    renderFactorsEditor();
+    return;
+  }
+  APP_STATE.factors[idx].levels = lvls;
+  renderFactorsEditor();
+}
+
+function addFactorRow() {
+  const nextChar = String.fromCharCode(65 + (APP_STATE.factors.length % 26));
+  const name = APP_STATE.factors.some(f => f.name === nextChar) ? `X${APP_STATE.factors.length + 1}` : nextChar;
+  APP_STATE.factors.push({ name, levels: [`${name}1`, `${name}2`] });
+  renderFactorsEditor();
+}
+
+function removeFactorRow(idx) {
+  if (APP_STATE.factors.length <= 1) {
+    alert("At least one factor is required.");
+    return;
+  }
+  APP_STATE.factors.splice(idx, 1);
+  renderFactorsEditor();
+}
+
+function updateBlockingDropdown() {
+  const sel = document.getElementById("BLOCKING_FACTOR");
+  const prev = sel.value;
+  sel.innerHTML = `<option value="">None (Unblocked)</option>`;
+  for (const f of APP_STATE.factors) {
+    const opt = document.createElement("option");
+    opt.value = f.name;
+    opt.textContent = f.name;
+    if (f.name === prev) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+/* ============================================================================
+   7. CONSTRAINT BUILDER (VISUAL RULES + PYTHON/JS EXPRESSION + MANUAL CHECKS)
+   ============================================================================ */
+
+function renderVisualRuleDropdowns() {
+  const row = document.getElementById("newRuleRow");
+  if (!row) return;
+  row.innerHTML = "";
+  for (const f of APP_STATE.factors) {
+    const wrap = document.createElement("div");
+    wrap.style.display = "flex";
+    wrap.style.alignItems = "center";
+    wrap.style.gap = "0.3rem";
+    const opts = [`<option value="*">Any ${f.name}</option>`]
+      .concat(f.levels.map(l => `<option value="${l}">${f.name} == "${l}"</option>`))
+      .join("");
+    wrap.innerHTML = `<select data-rule-factor="${f.name}" style="font-size:0.78rem;">${opts}</select>`;
+    row.appendChild(wrap);
+  }
+}
+
+function addVisualRule() {
+  const selects = document.querySelectorAll("[data-rule-factor]");
+  const conditions = {};
+  selects.forEach(s => {
+    if (s.value !== "*") conditions[s.getAttribute("data-rule-factor")] = s.value;
+  });
+  if (Object.keys(conditions).length === 0) {
+    alert("Select at least one specific factor level to create an exclusion rule.");
+    return;
+  }
+  APP_STATE.visualRules.push({ id: Date.now() + Math.random(), conditions });
+  renderActiveVisualRules();
+  refreshCandidatePreview();
+}
+
+function removeVisualRule(id) {
+  APP_STATE.visualRules = APP_STATE.visualRules.filter(r => r.id !== id);
+  renderActiveVisualRules();
+  refreshCandidatePreview();
+}
+
+function clearAllRules() {
+  APP_STATE.visualRules = [];
+  APP_STATE.manualDisallowedKeys.clear();
+  document.getElementById("customConstraintExpr").value = "";
+  renderActiveVisualRules();
+  refreshCandidatePreview();
+}
+
+function allowAllManualRows() {
+  APP_STATE.manualDisallowedKeys.clear();
+  refreshCandidatePreview();
+}
+
+function renderActiveVisualRules() {
+  const list = document.getElementById("activeRulesList");
+  if (APP_STATE.visualRules.length === 0) {
+    list.innerHTML = `<div style="font-size:0.8rem; color:var(--text-muted);">No visual exclusion rules defined.</div>`;
+    return;
+  }
+  list.innerHTML = APP_STATE.visualRules.map((r, i) => {
+    const desc = Object.entries(r.conditions).map(([k, v]) => `<code>row["${k}"] == "${v}"</code>`).join(" AND ");
+    return `
+      <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg-input); padding:0.45rem 0.75rem; border-radius:6px; border:1px solid var(--border); font-size:0.82rem;">
+        <span><strong>Rule #${i + 1}:</strong> Disallow when ${desc}</span>
+        <button class="btn-icon" style="height:24px; width:24px;" onclick="removeVisualRule(${r.id})">&times;</button>
+      </div>
+    `;
+  }).join("");
+}
+
+function compileCustomExpression(exprStr) {
+  const trimmed = (exprStr || "").trim();
+  const statusEl = document.getElementById("exprStatusMsg");
+  if (!trimmed) {
+    if (statusEl) {
+      statusEl.textContent = "Expression valid (No custom expression active).";
+      statusEl.style.color = "var(--success)";
+    }
+    return () => false;
+  }
+  let jsExpr = trimmed
+    .replace(/^return\s+/i, "")
+    .replace(/\band\b/g, "&&")
+    .replace(/\bor\b/g, "||")
+    .replace(/\bnot\b/g, "!")
+    .replace(/\bTrue\b/g, "true")
+    .replace(/\bFalse\b/g, "false");
+  try {
+    const fn = new Function("row", `return Boolean(${jsExpr});`);
+    const sampleRow = {};
+    APP_STATE.factors.forEach(f => sampleRow[f.name] = f.levels[0]);
+    fn(sampleRow);
+    if (statusEl) {
+      statusEl.textContent = `Active filter compiled: ${jsExpr}`;
+      statusEl.style.color = "var(--success)";
+    }
+    return fn;
+  } catch (err) {
+    if (statusEl) {
+      statusEl.textContent = `Syntax Warning: ${err.message}`;
+      statusEl.style.color = "var(--danger)";
+    }
+    return () => false;
+  }
+}
+
+function rowKey(rowObj) {
+  return APP_STATE.factors.map(f => `${f.name}:${rowObj[f.name]}`).join("|");
+}
+
+function evaluateRowDisallowed(rowObj, customFn) {
+  const key = rowKey(rowObj);
+  const byManual = APP_STATE.manualDisallowedKeys.has(key);
+  const byVisual = APP_STATE.visualRules.some(r =>
+    Object.entries(r.conditions).every(([fName, val]) => rowObj[fName] === val)
+  );
+  let byExpr = false;
+  try { byExpr = Boolean(customFn(rowObj)); } catch (_) { byExpr = false; }
+  return {
+    disallowed: byManual || byVisual || byExpr,
+    reasons: [
+      byManual ? "Manual Checkbox" : null,
+      byVisual ? "Visual Rule" : null,
+      byExpr ? "Custom Expression" : null
+    ].filter(Boolean)
+  };
+}
+
+function generateFullCartesianRows() {
+  const fNames = APP_STATE.factors.map(f => f.name);
+  const fLevels = APP_STATE.factors.map(f => f.levels);
+  const prod = cartesianProduct(fLevels);
+  return prod.map(comb => {
+    const obj = {};
+    fNames.forEach((n, i) => obj[n] = comb[i]);
+    return obj;
+  });
+}
+
+function toggleManualCandidateRow(key, checked) {
+  if (!checked) APP_STATE.manualDisallowedKeys.add(key);
+  else APP_STATE.manualDisallowedKeys.delete(key);
+  refreshCandidatePreview();
+}
+
+function refreshCandidatePreview() {
+  const allRows = generateFullCartesianRows();
+  const exprFn = compileCustomExpression(document.getElementById("customConstraintExpr")?.value || "");
+  let disallowedCount = 0;
+
+  const headEl = document.getElementById("candidateTableHead");
+  const bodyEl = document.getElementById("candidateTableBody");
+  const fNames = APP_STATE.factors.map(f => f.name);
+
+  if (headEl) {
+    headEl.innerHTML = `<tr>
+      <th>Allow</th>
+      <th>#</th>
+      ${fNames.map(n => `<th>${n}</th>`).join("")}
+      <th>Status / Constraint Source</th>
+    </tr>`;
+  }
+
+  const rowsHtml = [];
+  allRows.forEach((r, idx) => {
+    const key = rowKey(r);
+    const ev = evaluateRowDisallowed(r, exprFn);
+    if (ev.disallowed) disallowedCount++;
+    const isManualAllowed = !APP_STATE.manualDisallowedKeys.has(key);
+    const statusBadge = ev.disallowed
+      ? `<span class="pill pill-danger">Disallowed (${ev.reasons.join(", ")})</span>`
+      : `<span class="pill pill-ok">Feasible</span>`;
+
+    rowsHtml.push(`<tr>
+      <td><input type="checkbox" ${isManualAllowed ? "checked" : ""} onchange="toggleManualCandidateRow('${key.replace(/'/g, "\\'")}', this.checked)"></td>
+      <td class="mono">${idx + 1}</td>
+      ${fNames.map(n => `<td class="mono">${r[n]}</td>`).join("")}
+      <td>${statusBadge}</td>
+    </tr>`);
+  });
+
+  if (bodyEl) bodyEl.innerHTML = rowsHtml.join("");
+  const totalEl = document.getElementById("totalCartCount");
+  if (totalEl) totalEl.textContent = allRows.length;
+  const badgeEl = document.getElementById("disallowedBadge");
+  if (badgeEl) badgeEl.textContent = disallowedCount;
+}
+
+/* ============================================================================
+   8. MAIN SIZING ENGINE CONTROLLER & NARRATIVE GENERATOR
+   ============================================================================ */
+
+function readConfigurationFromUI() {
+  const EFFORT_CONFIG = {
+    TEST:   { restarts: 2,  mc_main: 150,  mc_search: 100, mc_plot: 100, exchange_passes: 4 },
+    DRAFT:  { restarts: 4,  mc_main: 500,  mc_search: 100, mc_plot: 100, exchange_passes: 8 },
+    NORMAL: { restarts: 10, mc_main: 2000, mc_search: 250, mc_plot: 200, exchange_passes: 12 },
+    HIGH:   { restarts: 25, mc_main: 5000, mc_search: 500, mc_plot: 500, exchange_passes: 20 }
+  };
+
+  const effortKey = document.getElementById("COMPUTATIONAL_EFFORT").value;
+  const eff = EFFORT_CONFIG[effortKey] || EFFORT_CONFIG.DRAFT;
+
+  const factorsDict = {};
+  APP_STATE.factors.forEach(f => { factorsDict[f.name] = [...f.levels]; });
+
+  const diffs = document.getElementById("DIFFS_TO_DETECT").value
+    .split(",").map(v => parseFloat(v.trim())).filter(v => !isNaN(v) && v > 0);
+  const snrs = document.getElementById("SNR_VALUES").value
+    .split(",").map(v => parseFloat(v.trim())).filter(v => !isNaN(v) && Math.abs(v) > 0);
+
+  const blockFactorVal = document.getElementById("BLOCKING_FACTOR").value || null;
+  const blockSizeRaw = parseInt(document.getElementById("BLOCK_SIZE").value, 10);
+  const searchStartRaw = parseInt(document.getElementById("SEARCH_START_N").value, 10);
+
+  let optMode = document.getElementById("OPTIMIZATION_MODE").value;
+  const forceFF = document.getElementById("FORCE_FULL_FACTORIAL").checked;
+  if (forceFF) optMode = "REPLICATE";
+
+  return {
+    OPTIMIZATION_MODE: optMode,
+    RESPONSE_TYPE: document.getElementById("RESPONSE_TYPE").value,
+    P0: parseFloat(document.getElementById("P0").value),
+    DIFFS_TO_DETECT: diffs,
+    SNR_VALUES: snrs,
+    TEST_SIDEDNESS: document.getElementById("TEST_SIDEDNESS").value,
+    FACTORS: factorsDict,
+    INTERACTION_ORDER: parseInt(document.getElementById("INTERACTION_ORDER").value, 10),
+    BLOCKING_FACTOR: blockFactorVal,
+    BLOCK_SIZE: isNaN(blockSizeRaw) ? null : blockSizeRaw,
+    FORCE_FULL_FACTORIAL: forceFF,
+    TARGET_POWER: parseFloat(document.getElementById("TARGET_POWER").value),
+    ALPHA: parseFloat(document.getElementById("ALPHA").value),
+    MULTIPLICITY_METHOD: document.getElementById("MULTIPLICITY_METHOD").value,
+    USE_CONSERVATIVE_MC_BOUND: document.getElementById("USE_CONSERVATIVE_MC_BOUND").checked,
+    MC_CONFIDENCE: parseFloat(document.getElementById("MC_CONFIDENCE").value),
+    MAX_ALLOWABLE_RUNS: parseInt(document.getElementById("MAX_ALLOWABLE_RUNS").value, 10) || 2000,
+    SEARCH_START_N: isNaN(searchStartRaw) ? null : searchStartRaw,
+    COARSE_SEARCH_STEP: parseInt(document.getElementById("COARSE_SEARCH_STEP").value, 10) || 18,
+    FINE_SEARCH_STEP: parseInt(document.getElementById("FINE_SEARCH_STEP").value, 10) || 1,
+    MC_SCREEN_MARGIN: 0.03,
+    MC_SEARCH_STEP: parseInt(document.getElementById("MC_SEARCH_STEP").value, 10) || 6,
+    MC_REFINE_EXACT_N: document.getElementById("MC_REFINE_EXACT_N").checked,
+    PLOT_POINTS: parseInt(document.getElementById("PLOT_POINTS").value, 10) || 12,
+    MATRIX_SIZING_VALUE: parseFloat(document.getElementById("MATRIX_SIZING_VALUE").value) || 0.20,
+    COMPUTATIONAL_EFFORT: effortKey,
+    APPLY_PLOT_SMOOTHING: document.getElementById("APPLY_PLOT_SMOOTHING").checked,
+    RANDOM_SEED: parseInt(document.getElementById("RANDOM_SEED").value, 10) || 42,
+    N_RESTARTS: eff.restarts,
+    N_SIMS_MAIN: eff.mc_main,
+    N_SIMS_SEARCH: eff.mc_search,
+    N_SIMS_PLOT: eff.mc_plot,
+    MAX_EXCHANGE_PASSES: eff.exchange_passes
+  };
+}
+
+function getInteractionLabel(order) {
+  if (order === 1) return "Main Effects";
+  if (order === 2) return "Main Effects and Two-Way Interactions";
+  return `Main Effects Through ${order}-Way Interactions`;
+}
+
+function blockMultiplier(cfg) {
+  if (!cfg.BLOCKING_FACTOR) return 1;
+  return cfg.FACTORS[cfg.BLOCKING_FACTOR].length;
+}
+
+function alignToBlock(cfg, n, roundUp = true, customMult = null) {
+  const mult = customMult || blockMultiplier(cfg);
+  if (n <= 0) return mult;
+  if (n % mult === 0) return Math.floor(n);
+  return roundUp ? Math.ceil(n / mult) * mult : Math.floor(n / mult) * mult;
+}
+
+function selectBaseBlockSize(cfg, problem) {
+  if (cfg.FORCE_FULL_FACTORIAL) return problem.candidateCount;
+  const minEst = alignToBlock(cfg, problem.pParams + 1);
+  if (cfg.BLOCKING_FACTOR && cfg.BLOCK_SIZE) {
+    const req = cfg.FACTORS[cfg.BLOCKING_FACTOR].length * cfg.BLOCK_SIZE;
+    return Math.max(minEst, alignToBlock(cfg, req));
+  }
+  return minEst;
+}
+
+function formatNumClean(val, maxDec = 2) {
+  const num = Number(val);
+  if (!Number.isFinite(num)) return String(val);
+  if (Math.abs(num - Math.round(num)) < 1e-9) return num.toFixed(1);
+  const s1 = num.toFixed(1);
+  const s2 = num.toFixed(maxDec);
+  return s2.endsWith("0") ? s1 : s2;
+}
+
+function generateConsolidatedReportText(cfg, problem, allResults) {
+  if (!allResults || allResults.length === 0) {
+    return "Run the sizing engine to generate copy-pastable test plan/report text.";
+  }
+
+  const confPct = Math.round(cfg.TARGET_POWER * 100);
+  const falseAlarmPct = Math.round(cfg.ALPHA * 100);
+  const coreSeqRuns = selectBaseBlockSize(cfg, problem);
+
+  const sorted = [...allResults].sort((a, b) => {
+    const shiftA = cfg.RESPONSE_TYPE === "PROPORTIONAL" ? Math.abs(a.alternative - cfg.P0) : Math.abs(a.alternative);
+    const shiftB = cfg.RESPONSE_TYPE === "PROPORTIONAL" ? Math.abs(b.alternative - cfg.P0) : Math.abs(b.alternative);
+    return shiftB - shiftA;
+  });
+
+  const minThreshN = Math.min(...sorted.map(r => r.thresholdN));
+  const maxThreshN = Math.max(...sorted.map(r => r.thresholdN));
+
+  if (cfg.RESPONSE_TYPE === "CONTINUOUS") {
+    let threshBreakdown = "";
+    let doeBreakdown = "";
+
+    if (sorted.length === 3) {
+      const [rLarge, rMod, rSubtle] = sorted;
+      const snrLarge = formatNumClean(rLarge.alternative);
+      const snrMod = formatNumClean(rMod.alternative);
+      const snrSubtle = formatNumClean(rSubtle.alternative);
+
+      threshBreakdown = `${rLarge.thresholdN} runs for large shifts at SNR ${snrLarge}, ${rMod.thresholdN} runs for moderate shifts at SNR ${snrMod}, and ${rSubtle.thresholdN} runs for subtle shifts at SNR ${snrSubtle}`;
+      doeBreakdown = `requiring ${rLarge.result.nRuns} runs to catch large shifts (SNR ${snrLarge}), ${rMod.result.nRuns} runs for moderate shifts (SNR ${snrMod}), or ${rSubtle.result.nRuns} runs to reliably separate subtle performance changes from random background noise (SNR ${snrSubtle})`;
+    } else if (sorted.length === 2) {
+      const [rLarge, rSubtle] = sorted;
+      const snrLarge = formatNumClean(rLarge.alternative);
+      const snrSubtle = formatNumClean(rSubtle.alternative);
+      threshBreakdown = `${rLarge.thresholdN} runs for large shifts at SNR ${snrLarge} and ${rSubtle.thresholdN} runs for subtle shifts at SNR ${snrSubtle}`;
+      doeBreakdown = `requiring ${rLarge.result.nRuns} runs to catch large shifts (SNR ${snrLarge}) or ${rSubtle.result.nRuns} runs to reliably separate subtle performance changes from random background noise (SNR ${snrSubtle})`;
+    } else {
+      threshBreakdown = sorted.map(r => `${r.thresholdN} runs at SNR ${formatNumClean(r.alternative)}`).join(", ");
+      doeBreakdown = `requiring ` + sorted.map(r => `${r.result.nRuns} runs at SNR ${formatNumClean(r.alternative)}`).join(", ");
+    }
+
+    const threshRangeStr = minThreshN === maxThreshN ? `${minThreshN}` : `${minThreshN} to ${maxThreshN}`;
+
+    return `The number of test runs required to evaluate the system with ${confPct}% confidence (and a ${falseAlarmPct}% false-alarm risk) depends on two leadership decisions: whether we only need a basic pass/fail check or a full breakdown of what drives performance, and our target Signal-to-Noise Ratio (SNR). SNR compares the size of the performance shift we need to detect ("signal") against the system's normal, day-to-day background variation ("noise"). Tracking this ratio is critical because catching subtle performance issues hidden within routine system fluctuation requires far more data than catching large, obvious shifts. If the goal is simply to verify that the system meets its minimum baseline standard, the team only needs ${threshRangeStr} test runs (${threshBreakdown}). However, to evaluate the system across its full operational envelope and pinpoint which specific factors drive performance, the team must repeat a core ${coreSeqRuns}-run test sequence—${doeBreakdown}.`;
+  } else {
+    let threshBreakdown = "";
+    let doeBreakdown = "";
+
+    if (sorted.length === 3) {
+      const [rLarge, rMod, rSubtle] = sorted;
+      const dLarge = formatNumClean(Math.abs(rLarge.alternative - cfg.P0));
+      const dMod = formatNumClean(Math.abs(rMod.alternative - cfg.P0));
+      const dSubtle = formatNumClean(Math.abs(rSubtle.alternative - cfg.P0));
+
+      threshBreakdown = `${rLarge.thresholdN} runs for large shifts at a Difference to Detect of ${dLarge}, ${rMod.thresholdN} runs for moderate shifts at a Difference to Detect of ${dMod}, and ${rSubtle.thresholdN} runs for subtle shifts at a Difference to Detect of ${dSubtle}`;
+      doeBreakdown = `requiring ${rLarge.result.nRuns} runs to catch large shifts (Difference to Detect of ${dLarge}), ${rMod.result.nRuns} runs for moderate shifts (Difference to Detect of ${dMod}), or ${rSubtle.result.nRuns} runs to reliably separate subtle performance changes from random background noise (Difference to Detect of ${dSubtle})`;
+    } else if (sorted.length === 2) {
+      const [rLarge, rSubtle] = sorted;
+      const dLarge = formatNumClean(Math.abs(rLarge.alternative - cfg.P0));
+      const dSubtle = formatNumClean(Math.abs(rSubtle.alternative - cfg.P0));
+      threshBreakdown = `${rLarge.thresholdN} runs for large shifts at a Difference to Detect of ${dLarge} and ${rSubtle.thresholdN} runs for subtle shifts at a Difference to Detect of ${dSubtle}`;
+      doeBreakdown = `requiring ${rLarge.result.nRuns} runs to catch large shifts (Difference to Detect of ${dLarge}) or ${rSubtle.result.nRuns} runs to reliably separate subtle performance changes from random background noise (Difference to Detect of ${dSubtle})`;
+    } else {
+      threshBreakdown = sorted.map(r => `${r.thresholdN} runs at a Difference to Detect of ${formatNumClean(Math.abs(r.alternative - cfg.P0))}`).join(", ");
+      doeBreakdown = `requiring ` + sorted.map(r => `${r.result.nRuns} runs at a Difference to Detect of ${formatNumClean(Math.abs(r.alternative - cfg.P0))}`).join(", ");
+    }
+
+    const threshRangeStr = minThreshN === maxThreshN ? `${minThreshN}` : `${minThreshN} to ${maxThreshN}`;
+
+    return `The number of test runs required to evaluate the system with ${confPct}% confidence (and a ${falseAlarmPct}% false-alarm risk) depends on two leadership decisions: whether we only need a basic pass/fail check or a full breakdown of what drives performance, and our target Difference to Detect. Difference to Detect compares the size of the performance shift in pass/success rate we need to detect ("signal") against the system's normal trial-to-trial binomial variation ("noise") around the ${formatNumClean(cfg.P0)} baseline standard. Tracking this difference is critical because catching subtle performance issues hidden within routine system fluctuation requires far more data than catching large, obvious shifts. If the goal is simply to verify that the system meets its minimum baseline standard, the team only needs ${threshRangeStr} test runs (${threshBreakdown}). However, to evaluate the system across its full operational envelope and pinpoint which specific factors drive performance, the team must repeat a core ${coreSeqRuns}-run test sequence—${doeBreakdown}.`;
+  }
+}
+
+function buildAlternatives(cfg) {
+  if (cfg.RESPONSE_TYPE === "CONTINUOUS") {
+    return cfg.SNR_VALUES.map(v => Math.abs(v));
+  }
+  const alts = [];
+  for (const diff of cfg.DIFFS_TO_DETECT) {
+    let p1;
+    if (cfg.TEST_SIDEDNESS === "larger") p1 = cfg.P0 + diff;
+    else if (cfg.TEST_SIDEDNESS === "smaller") p1 = cfg.P0 - diff;
+    else {
+      const up = cfg.P0 + diff, dn = cfg.P0 - diff;
+      const upValid = up > 0 && up < 1;
+      const dnValid = dn > 0 && dn < 1;
+      if (upValid && dnValid) p1 = Math.abs(up - 0.5) < Math.abs(dn - 0.5) ? up : dn;
+      else if (upValid) p1 = up;
+      else if (dnValid) p1 = dn;
+      else throw new Error(`Difference ${diff} creates invalid two-sided alternatives from P0=${cfg.P0}.`);
+    }
+    if (!(p1 > 0 && p1 < 1)) {
+      throw new Error(`Alternative proportion p1=${p1.toFixed(3)} must be strictly between 0 and 1.`);
+    }
+    alts.push(Number(p1.toFixed(6)));
+  }
+  return alts;
+}
+
+function logLine(msg) {
+  APP_STATE.logs.push(msg);
+}
+
+function setProgressUI(visible, pct = 0, stageText = "", detailText = "", etaText = "ETA: --") {
+  const sbBox = document.getElementById("sidebarProgressBox");
+  const mainCard = document.getElementById("mainProgressCard");
+  if (!visible) {
+    if (sbBox) sbBox.style.display = "none";
+    if (mainCard) mainCard.style.display = "none";
+    return;
+  }
+  if (sbBox) sbBox.style.display = "block";
+  if (mainCard) mainCard.style.display = "block";
+
+  const clampedPct = Math.max(0, Math.min(100, Math.round(pct)));
+  const pctStr = `${clampedPct}%`;
+
+  const sbBar = document.getElementById("sidebarProgressBar");
+  const sbPct = document.getElementById("sidebarProgressPct");
+  const sbStage = document.getElementById("sidebarProgressStage");
+  const sbDetail = document.getElementById("sidebarProgressDetail");
+  const sbEta = document.getElementById("sidebarProgressEta");
+
+  if (sbBar) sbBar.style.width = pctStr;
+  if (sbPct) sbPct.textContent = pctStr;
+  if (sbStage && stageText) sbStage.textContent = stageText;
+  if (sbDetail && detailText) sbDetail.textContent = detailText;
+  if (sbEta && etaText) sbEta.textContent = etaText;
+
+  const mBar = document.getElementById("mainProgressBar");
+  const mPct = document.getElementById("mainProgressPct");
+  const mStage = document.getElementById("mainProgressStage");
+  const mDetail = document.getElementById("mainProgressDetail");
+  const mEta = document.getElementById("mainProgressEta");
+
+  if (mBar) mBar.style.width = pctStr;
+  if (mPct) mPct.textContent = pctStr;
+  if (mStage && stageText) mStage.textContent = stageText;
+  if (mDetail && detailText) mDetail.textContent = detailText;
+  if (mEta && etaText) mEta.textContent = etaText;
+}
+
+function formatEtaSeconds(sec) {
+  if (!Number.isFinite(sec) || sec < 0) return "ETA: Calculating...";
+  if (sec < 1) return "ETA: < 1s";
+  if (sec < 60) return `ETA: ~${Math.ceil(sec)}s`;
+  const mins = Math.floor(sec / 60);
+  const remSec = Math.ceil(sec % 60);
+  return `ETA: ~${mins}m ${remSec}s`;
+}
+
+async function yieldToBrowser() {
+  return new Promise(resolve => setTimeout(resolve, 0));
+}
+
+async function executeEngine() {
+  const btn = document.getElementById("runEngineBtn");
+  btn.disabled = true;
+  btn.innerHTML = `<span>⏳ Running Sizing &amp; Monte Carlo Engine...</span>`;
+
+  const tStart = performance.now();
+  setProgressUI(true, 2, "Initializing Sizing Engine...", "Building candidate space & model matrix...", "ETA: Calculating...");
+  await new Promise(resolve => setTimeout(resolve, 25));
+
+  try {
+    APP_STATE.logs = [];
+    const cfg = readConfigurationFromUI();
+    const allCartRows = generateFullCartesianRows();
+    const exprFn = compileCustomExpression(document.getElementById("customConstraintExpr")?.value || "");
+
+    const candidateRows = [];
+    for (const r of allCartRows) {
+      if (!evaluateRowDisallowed(r, exprFn).disallowed) candidateRows.push(r);
+    }
+    const nDisallowed = allCartRows.length - candidateRows.length;
+    if (candidateRows.length === 0) {
+      throw new Error("All candidate combinations were removed by constraints.");
+    }
+
+    for (const [fName, lvls] of Object.entries(cfg.FACTORS)) {
+      const obs = new Set(candidateRows.map(r => r[fName]));
+      for (const l of lvls) {
+        if (!obs.has(l)) {
+          throw new Error(`Constraints eliminated all rows for level '${l}' in factor '${fName}'.`);
+        }
+      }
+    }
+
+    const dm = buildSumCodedDesignMatrix(candidateRows, cfg.FACTORS, cfg.BLOCKING_FACTOR, cfg.INTERACTION_ORDER);
+    const candRank = matrixRank(dm.X_candidate);
+    if (candRank < dm.pParams) {
+      throw new Error(`Constrained candidate space is rank-deficient (Rank=${candRank}, Parameters=${dm.pParams}). Relax constraints or reduce interaction order.`);
+    }
+
+    const problem = {
+      candidateRows,
+      X_candidate: dm.X_candidate,
+      columnNames: dm.columnNames,
+      termGroups: dm.termGroups,
+      pParams: dm.pParams,
+      candidateRank: candRank,
+      candidateCount: candidateRows.length,
+      nDisallowed,
+      formula: dm.formula
+    };
+
+    const alternatives = buildAlternatives(cfg);
+
+    logLine("==========================================================================================");
+    logLine(`DOE STATISTICAL SIZING ENGINE | Formula: ${problem.formula}`);
+    logLine(`Candidate combinations: ${problem.candidateCount} (Disallowed: ${problem.nDisallowed}) | Rank: ${problem.candidateRank}/${problem.pParams}`);
+    logLine(`Mode: ${cfg.OPTIMIZATION_MODE} | Response: ${cfg.RESPONSE_TYPE} | Effort: ${cfg.COMPUTATIONAL_EFFORT}`);
+    logLine("==========================================================================================");
+
+    let continuousBaseDesign = null;
+    if (cfg.OPTIMIZATION_MODE === "REPLICATE" && cfg.RESPONSE_TYPE === "CONTINUOUS") {
+      const baseN = selectBaseBlockSize(cfg, problem);
+      setProgressUI(true, 6, "Generating D-Optimal Base Block...", `Optimizing ${baseN}-run base block...`, "ETA: Calculating...");
+      await yieldToBrowser();
+      continuousBaseDesign = generateDOptimalDesign(cfg, problem, baseN, null);
+      logLine(`[*] Continuous Replicate Base Block: ${baseN} runs | D-criterion=${continuousBaseDesign.dCriterion.toFixed(4)}`);
+    }
+
+    const sharedDesignCache = {};
+    const allResults = [];
+
+    const nConds = alternatives.length;
+    for (let cIdx = 0; cIdx < nConds; cIdx++) {
+      const altVal = alternatives[cIdx];
+      const label = cfg.RESPONSE_TYPE === "PROPORTIONAL"
+        ? `p0=${cfg.P0.toFixed(2)}, p1=${altVal.toFixed(2)}, |Δ|=${Math.abs(altVal - cfg.P0).toFixed(2)}`
+        : `SNR=${altVal.toFixed(2)}`;
+
+      const condStartPct = 8 + (cIdx / nConds) * 80;
+      const condSpanPct = 80 / nConds;
+
+      logLine(`\n[*] Evaluating Condition (${cIdx + 1}/${nConds}): ${label}`);
+      const threshN = thresholdSampleSize(cfg, altVal);
+
+      let conditionBaseDesign = continuousBaseDesign;
+      if (cfg.OPTIMIZATION_MODE === "REPLICATE" && cfg.RESPONSE_TYPE === "PROPORTIONAL") {
+        const baseN = selectBaseBlockSize(cfg, problem);
+        setProgressUI(
+          true,
+          condStartPct,
+          `Condition ${cIdx + 1}/${nConds}: ${label}`,
+          `Optimizing ${baseN}-run D-optimal base block...`,
+          "ETA: Calculating..."
+        );
+        await yieldToBrowser();
+        const condWeights = proportionalDesignWeights(problem, cfg.P0, altVal);
+        conditionBaseDesign = generateDOptimalDesign(cfg, problem, baseN, condWeights);
+        logLine(`    [*] Proportional Replicate Base Block: ${baseN} runs | D-criterion=${conditionBaseDesign.dCriterion.toFixed(4)}`);
+      }
+
+      const res = await findRequiredDesign(
+        cfg,
+        problem,
+        altVal,
+        conditionBaseDesign,
+        sharedDesignCache,
+        async (subFrac, stageMsg, detailMsg) => {
+          const overallPct = condStartPct + Math.min(0.99, Math.max(0.01, subFrac)) * condSpanPct;
+          const elapsedSec = (performance.now() - tStart) / 1000;
+          let etaStr = "ETA: Calculating...";
+          if (overallPct > 10 && elapsedSec > 0.15) {
+            const totalEstSec = elapsedSec / (overallPct / 100);
+            const remSec = Math.max(0, totalEstSec - elapsedSec);
+            etaStr = formatEtaSeconds(remSec);
+          }
+          setProgressUI(
+            true,
+            overallPct,
+            `Condition ${cIdx + 1}/${nConds} (${label}) — ${stageMsg}`,
+            detailMsg,
+            etaStr
+          );
+          document.getElementById("engineLogConsole").textContent = APP_STATE.logs.join("\n");
+          await yieldToBrowser();
+        }
+      );
+
+      const baseBlockSize = conditionBaseDesign ? conditionBaseDesign.designRows.length : res.nRuns;
+      const repeats = baseBlockSize > 0 ? Math.round(res.nRuns / baseBlockSize) : 1;
+
+      if (cfg.OPTIMIZATION_MODE === "REPLICATE") {
+        logLine(`    [+] Recommended Replicate Design: ${repeats} base block replicates x ${baseBlockSize} runs = ${res.nRuns} total runs`);
+      }
+
+      allResults.push({
+        label,
+        alternative: altVal,
+        thresholdN: threshN,
+        result: res,
+        baseDesign: conditionBaseDesign,
+        baseBlockSize,
+        repeats,
+        narrative: ""
+      });
+    }
+
+    const consolidatedText = generateConsolidatedReportText(cfg, problem, allResults);
+    allResults.forEach(r => { r.narrative = consolidatedText; });
+
+    APP_STATE.lastConfig = cfg;
+    APP_STATE.lastProblem = problem;
+    APP_STATE.lastRunResults = { allResults, sharedDesignCache };
+
+    setProgressUI(true, 92, "Rendering High-Resolution Power Curves...", "Computing curve points and layout...", "ETA: < 1s");
+    await yieldToBrowser();
+
+    updateDashboardUI();
+    showToast("Sizing & Optimization Complete!");
+  } catch (err) {
+    alert("Engine Error: " + err.message);
+    logLine("[ERROR] " + err.message);
+    document.getElementById("engineLogConsole").textContent = APP_STATE.logs.join("\n");
+  } finally {
+    setProgressUI(false);
+    btn.disabled = false;
+    btn.innerHTML = `<span>⚡ Run Sizing &amp; Optimization Engine</span>`;
+  }
+}
+
+async function findRequiredDesign(cfg, problem, altVal, baseDesign, sharedDesignCache, onProgress) {
+  const stepUnit = (cfg.OPTIMIZATION_MODE === "REPLICATE" && baseDesign)
+    ? baseDesign.designRows.length
+    : blockMultiplier(cfg);
+
+  const alignN = (n, roundUp = true) => alignToBlock(cfg, n, roundUp, stepUnit);
+
+  let minN = problem.pParams + 1;
+  if (cfg.SEARCH_START_N !== null) minN = Math.max(minN, cfg.SEARCH_START_N);
+  minN = alignN(minN, true);
+
+  let maxN = alignN(cfg.MAX_ALLOWABLE_RUNS, false);
+  if (maxN < minN) {
+    maxN = minN;
+  }
+
+  const coarseStep = alignN(Math.max(stepUnit, cfg.COARSE_SEARCH_STEP), true);
+  const fineStep = alignN(Math.max(stepUnit, cfg.FINE_SEARCH_STEP), true);
+  const mcStep = alignN(Math.max(stepUnit, cfg.MC_SEARCH_STEP), true);
+
+  const candidateWeights = cfg.RESPONSE_TYPE === "PROPORTIONAL"
+    ? proportionalDesignWeights(problem, cfg.P0, altVal)
+    : null;
+
+  const altKey = altVal.toFixed(8);
+  const mcCache = {};
+
+  function getDesign(nRuns) {
+    const key = `${cfg.RESPONSE_TYPE}|${altKey}|${cfg.OPTIMIZATION_MODE}|${nRuns}`;
+    if (!sharedDesignCache[key]) {
+      sharedDesignCache[key] = cfg.OPTIMIZATION_MODE === "ITERATIVE"
+        ? generateDOptimalDesign(cfg, problem, nRuns, candidateWeights)
+        : replicatedDesign(baseDesign, nRuns);
+    }
+    return sharedDesignCache[key];
+  }
+
+  function approxPower(nRuns) {
+    const design = getDesign(nRuns);
+    if (design.singular) return { power: 0.0, termPower: {}, design };
+    const res = cfg.RESPONSE_TYPE === "CONTINUOUS"
+      ? continuousOmnibusPower(cfg, design.X, problem.termGroups, altVal)
+      : proportionalApproximatePower(cfg, design.X, problem.termGroups, cfg.P0, altVal);
+    return { power: res.minPower, termPower: res.termPower, design };
+  }
+
+  function runMC(nRuns, nSims) {
+    const k = `${nRuns}_${nSims}`;
+    if (mcCache[k]) return mcCache[k];
+    const design = getDesign(nRuns);
+    const seed = cfg.RANDOM_SEED + 1000000 + nRuns * 1000 + nSims + Math.floor(altVal * 100000);
+    const rng = new SeededRNG(seed);
+    const out = proportionalMcPower(cfg, design.X, problem.termGroups, cfg.P0, altVal, nSims, rng);
+    mcCache[k] = out;
+    return out;
+  }
+
+  logLine(`    [*] Search range: N=${minN} to N=${maxN} (unit=${stepUnit}) | coarse=${coarseStep} | fine=${fineStep} | MC step=${mcStep}`);
+
+  let coarseHitN = null;
+  let priorCoarseN = minN;
+  const maxCoarseSteps = Math.max(1, Math.ceil((maxN - minN) / coarseStep));
+  let coarseIdx = 0;
+
+  for (let n = minN; n <= maxN; n += coarseStep) {
+    coarseIdx++;
+    const { power } = approxPower(n);
+    logLine(`    [~] Coarse N=${String(n).padStart(4)} | approx. minimum power=${(power * 100).toFixed(1)}%`);
+    if (onProgress && coarseIdx % 2 === 1) {
+      await onProgress(0.25 * (coarseIdx / maxCoarseSteps), "Coarse Search", `Evaluating N=${n} (Approx Power: ${(power * 100).toFixed(1)}%)`);
+    }
+    if (power >= cfg.TARGET_POWER) {
+      coarseHitN = n;
+      break;
+    }
+    priorCoarseN = n;
+  }
+
+  let approxThresholdN = null;
+  if (coarseHitN !== null) {
+    const fineStart = alignN(Math.max(minN, priorCoarseN), true);
+    const fineEnd = alignN(coarseHitN, true);
+    const maxFineSteps = Math.max(1, Math.ceil((fineEnd - fineStart) / fineStep) + 1);
+    let fineIdx = 0;
+    for (let n = fineStart; n <= fineEnd; n += fineStep) {
+      fineIdx++;
+      const { power } = approxPower(n);
+      if (onProgress && fineIdx % 2 === 1) {
+        await onProgress(0.25 + 0.15 * (fineIdx / maxFineSteps), "Fine Search", `Refining N=${n} (Approx Power: ${(power * 100).toFixed(1)}%)`);
+      }
+      if (power >= cfg.TARGET_POWER) {
+        approxThresholdN = n;
+        logLine(`    [.] Fine search hit at N=${n} | approx. power=${(power * 100).toFixed(1)}%`);
+        break;
+      }
+    }
+  }
+
+  if (cfg.RESPONSE_TYPE === "CONTINUOUS") {
+    if (approxThresholdN !== null) {
+      const { power, termPower, design } = approxPower(approxThresholdN);
+      if (onProgress) await onProgress(0.98, "Completed Analytical Sizing", `Selected N=${approxThresholdN} (${(power * 100).toFixed(1)}% power)`);
+      return {
+        nRuns: approxThresholdN,
+        design,
+        achievedPower: power,
+        termPower,
+        termMcDetails: {},
+        budgetLimited: false,
+        candidateWeights
+      };
+    }
+    const { power, termPower, design } = approxPower(maxN);
+    return {
+      nRuns: maxN,
+      design,
+      achievedPower: power,
+      termPower,
+      termMcDetails: {},
+      budgetLimited: true,
+      candidateWeights
+    };
+  }
+
+  if (approxThresholdN === null) {
+    logLine(`    [!] Approximate target power not reached within budget. Running MC at N=${maxN}...`);
+    if (onProgress) await onProgress(0.85, "Monte Carlo Verification", `Simulating ${cfg.N_SIMS_MAIN} GLM trials at budget ceiling N=${maxN}...`);
+    const fbDesign = getDesign(maxN);
+    const fbMC = runMC(maxN, cfg.N_SIMS_MAIN);
+    return {
+      nRuns: maxN,
+      design: fbDesign,
+      achievedPower: fbMC.minPower,
+      termPower: fbMC.termPower,
+      termMcDetails: fbMC.termDetails,
+      budgetLimited: true,
+      candidateWeights
+    };
+  }
+
+  let mcStartN = approxThresholdN;
+  const mcTrigger = Math.max(0.05, cfg.TARGET_POWER - cfg.MC_SCREEN_MARGIN);
+  while (mcStartN <= maxN && approxPower(mcStartN).power < mcTrigger) {
+    mcStartN += mcStep;
+  }
+  if (mcStartN > maxN) mcStartN = maxN;
+
+  let gridPassN = null;
+  let gridPassResult = null;
+  let mcGridStepCount = 0;
+
+  for (let n = mcStartN; n <= maxN; n += mcStep) {
+    mcGridStepCount++;
+    const progFrac = Math.min(0.78, 0.40 + mcGridStepCount * 0.06);
+    if (onProgress) {
+      await onProgress(progFrac, "Monte Carlo Screening", `Running ${cfg.N_SIMS_SEARCH} MC LRT trials at N=${n}...`);
+    }
+    const { power: scrPwr, design } = approxPower(n);
+    const mcScr = runMC(n, cfg.N_SIMS_SEARCH);
+    logLine(`        [MC Screen] N=${String(n).padStart(4)} | approx=${(scrPwr * 100).toFixed(1)}% | MC screen=${(mcScr.minPower * 100).toFixed(1)}%`);
+
+    if (meetsMcRequirement(cfg, mcScr.minPower, mcScr.termDetails)) {
+      if (onProgress) {
+        await onProgress(Math.min(0.85, progFrac + 0.04), "Monte Carlo Verification", `Verifying N=${n} with ${cfg.N_SIMS_MAIN} high-fidelity MC trials...`);
+      }
+      const mcVer = runMC(n, cfg.N_SIMS_MAIN);
+      logLine(`        [MC Verify] N=${String(n).padStart(4)} | verified power=${(mcVer.minPower * 100).toFixed(1)}% (${cfg.N_SIMS_MAIN} sims)`);
+      if (meetsMcRequirement(cfg, mcVer.minPower, mcVer.termDetails)) {
+        gridPassN = n;
+        gridPassResult = {
+          nRuns: n,
+          design,
+          achievedPower: mcVer.minPower,
+          termPower: mcVer.termPower,
+          termMcDetails: mcVer.termDetails,
+          budgetLimited: false,
+          candidateWeights
+        };
+        break;
+      }
+    }
+  }
+
+  if (gridPassResult !== null) {
+    if (!cfg.MC_REFINE_EXACT_N) return gridPassResult;
+    const refineStart = alignN(approxThresholdN, true);
+    const totalRefineSteps = Math.max(1, Math.round((gridPassN - refineStart) / fineStep) + 1);
+    let rIdx = 0;
+    for (let n = refineStart; n <= gridPassN; n += fineStep) {
+      rIdx++;
+      if (onProgress) {
+        await onProgress(
+          0.85 + 0.14 * (rIdx / totalRefineSteps),
+          "Exact-N MC Refinement",
+          `Testing candidate N=${n} (${rIdx}/${totalRefineSteps}) with ${cfg.N_SIMS_MAIN} sims...`
+        );
+      }
+      const { design } = approxPower(n);
+      const mcVer = runMC(n, cfg.N_SIMS_MAIN);
+      logLine(`        [MC Refine] N=${String(n).padStart(4)} | verified power=${(mcVer.minPower * 100).toFixed(1)}%`);
+      if (meetsMcRequirement(cfg, mcVer.minPower, mcVer.termDetails)) {
+        return {
+          nRuns: n,
+          design,
+          achievedPower: mcVer.minPower,
+          termPower: mcVer.termPower,
+          termMcDetails: mcVer.termDetails,
+          budgetLimited: false,
+          candidateWeights
+        };
+      }
+    }
+    return gridPassResult;
+  }
+
+  if (onProgress) {
+    await onProgress(0.95, "Monte Carlo Ceiling Check", `Running ${cfg.N_SIMS_MAIN} MC trials at max N=${maxN}...`);
+  }
+  const fbDesign = getDesign(maxN);
+  const fbMC = runMC(maxN, cfg.N_SIMS_MAIN);
+  return {
+    nRuns: maxN,
+    design: fbDesign,
+    achievedPower: fbMC.minPower,
+    termPower: fbMC.termPower,
+    termMcDetails: fbMC.termDetails,
+    budgetLimited: true,
+    candidateWeights
+  };
+}
+
+/* ============================================================================
+   9. RENDERING DASHBOARD, PLOTS, NARRATIVES & EXPORTS
+   ============================================================================ */
+
+function getSelectedRecordIndex() {
+  const { allResults } = APP_STATE.lastRunResults;
+  const cfg = APP_STATE.lastConfig;
+  let bestIdx = 0;
+  let bestDiff = Infinity;
+  allResults.forEach((rec, i) => {
+    const metric = cfg.RESPONSE_TYPE === "PROPORTIONAL"
+      ? Math.abs(rec.alternative - cfg.P0)
+      : rec.alternative;
+    const d = Math.abs(metric - cfg.MATRIX_SIZING_VALUE);
+    if (d < bestDiff) {
+      bestDiff = d;
+      bestIdx = i;
+    }
+  });
+  return bestIdx;
+}
+
+function updateDashboardUI() {
+  const cfg = APP_STATE.lastConfig;
+  const problem = APP_STATE.lastProblem;
+  const { allResults, sharedDesignCache } = APP_STATE.lastRunResults;
+  const selIdx = getSelectedRecordIndex();
+  const selRec = allResults[selIdx];
+
+  document.getElementById("kpiFormula").textContent = problem.formula;
+  document.getElementById("kpiModeSub").textContent = `${cfg.RESPONSE_TYPE} | ${cfg.OPTIMIZATION_MODE} | ${cfg.COMPUTATIONAL_EFFORT} Effort`;
+  document.getElementById("kpiCandidates").textContent = `${problem.candidateCount} Feasible`;
+  document.getElementById("kpiDisallowedSub").textContent = `${problem.nDisallowed} combinations constrained out`;
+  document.getElementById("kpiRank").textContent = `${problem.candidateRank} / ${problem.pParams}`;
+  const numTerms = Object.keys(problem.termGroups).length;
+  document.getElementById("kpiAlphaSub").textContent = `Per-Term α: ${effectiveAlpha(cfg, numTerms).toFixed(4)} (${cfg.MULTIPLICITY_METHOD})`;
+  document.getElementById("kpiExportN").textContent = `${selRec.result.nRuns} Runs`;
+  document.getElementById("kpiExportCond").textContent = selRec.label;
+  document.getElementById("matrixCountBadge").textContent = selRec.result.nRuns;
+
+  const tbody = document.getElementById("summaryTableBody");
+  tbody.innerHTML = allResults.map((rec, idx) => {
+    const r = rec.result;
+    let minLBText = "N/A";
+    if (Object.keys(r.termMcDetails).length > 0) {
+      const minLB = Math.min(...Object.values(r.termMcDetails).map(d => d.lowerBound));
+      minLBText = `${(minLB * 100).toFixed(1)}%`;
+    }
+    const statusBadge = r.budgetLimited
+      ? `<span class="pill pill-danger">Budget Limited</span>`
+      : `<span class="pill pill-ok">Target Met</span>`;
+    const isSelectedTag = idx === selIdx ? ` <span class="pill pill-info">Selected</span>` : "";
+    const repTag = cfg.OPTIMIZATION_MODE === "REPLICATE"
+      ? ` <span style="font-size:0.73rem; color:var(--text-muted);">(${rec.repeats}x${rec.baseBlockSize})</span>`
+      : "";
+    const termStr = Object.entries(r.termPower)
+      .map(([k, v]) => `${k.replace(/C\(([^,]+),\s*Sum\)/g, "$1")}: ${(v * 100).toFixed(1)}%`)
+      .join(" | ");
+
+    return `<tr>
+      <td class="mono"><strong>${rec.label}</strong>${isSelectedTag}</td>
+      <td class="mono">${rec.thresholdN}</td>
+      <td class="mono"><strong>${r.nRuns}</strong>${repTag}</td>
+      <td class="mono">${(r.achievedPower * 100).toFixed(1)}%</td>
+      <td class="mono">${minLBText}</td>
+      <td class="mono">${r.design.dCriterion.toFixed(4)}</td>
+      <td>${statusBadge}</td>
+      <td style="font-size:0.76rem; color:var(--text-muted);">${termStr}</td>
+      <td><button class="btn-secondary" onclick="exportConditionCSV(${idx})">CSV</button></td>
+    </tr>`;
+  }).join("");
+
+  const narSel = document.getElementById("narrativeConditionSelect");
+  const matSel = document.getElementById("matrixScenarioSelect");
+  const optsHtml = allResults.map((r, i) => `<option value="${i}" ${i === selIdx ? "selected" : ""}>${r.label} (${r.result.nRuns} runs)</option>`).join("");
+  if (narSel) narSel.innerHTML = optsHtml;
+  if (matSel) matSel.innerHTML = optsHtml;
+
+  renderSelectedNarrative();
+  renderMatrixTab();
+  drawDualPowerPlots(cfg, problem, allResults, sharedDesignCache);
+  document.getElementById("engineLogConsole").textContent = APP_STATE.logs.join("\n");
+}
+
+function renderSelectedNarrative() {
+  if (!APP_STATE.lastRunResults) return;
+  const cfg = APP_STATE.lastConfig;
+  const problem = APP_STATE.lastProblem;
+  const { allResults } = APP_STATE.lastRunResults;
+  document.getElementById("narrativeOutput").textContent = generateConsolidatedReportText(cfg, problem, allResults);
+}
+
+function renderMatrixTab() {
+  if (!APP_STATE.lastRunResults) return;
+  const idx = parseInt(document.getElementById("matrixScenarioSelect").value, 10) || 0;
+  const rec = APP_STATE.lastRunResults.allResults[idx];
+  const r = rec.result;
+  const fNames = Object.keys(APP_STATE.lastConfig.FACTORS);
+
+  document.getElementById("matKpiCond").textContent = rec.label;
+  document.getElementById("matKpiRuns").textContent = APP_STATE.lastConfig.OPTIMIZATION_MODE === "REPLICATE"
+    ? `${r.nRuns} Runs (${rec.repeats} Replicates of ${rec.baseBlockSize})`
+    : `${r.nRuns} Runs`;
+  document.getElementById("matKpiPower").textContent = `${(r.achievedPower * 100).toFixed(1)}%`;
+  document.getElementById("matKpiDCrit").textContent = r.design.dCriterion.toFixed(4);
+
+  document.getElementById("runMatrixTableHead").innerHTML = `<tr><th>Run_Order</th>${fNames.map(f => `<th>${f}</th>`).join("")}</tr>`;
+  document.getElementById("runMatrixTableBody").innerHTML = r.design.designRows.map((row, i) => `
+    <tr>
+      <td class="mono">${i + 1}</td>
+      ${fNames.map(f => `<td class="mono">${row[f]}</td>`).join("")}
+    </tr>
+  `).join("");
+
+  const countsMap = new Map();
+  for (const row of r.design.designRows) {
+    const k = fNames.map(f => row[f]).join("||");
+    countsMap.set(k, (countsMap.get(k) || 0) + 1);
+  }
+  const sortedEntries = [...countsMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+
+  document.getElementById("allocationTableHead").innerHTML = `<tr>${fNames.map(f => `<th>${f}</th>`).join("")}<th>Allocated Runs</th><th>Share</th></tr>`;
+  document.getElementById("allocationTableBody").innerHTML = sortedEntries.map(([k, cnt]) => {
+    const vals = k.split("||");
+    const pct = ((cnt / r.nRuns) * 100).toFixed(1);
+    return `<tr>
+      ${vals.map(v => `<td class="mono">${v}</td>`).join("")}
+      <td class="mono"><strong>${cnt}</strong></td>
+      <td class="mono">${pct}%</td>
+    </tr>`;
+  }).join("");
+}
+
+function randomizeDisplayedMatrix() {
+  if (!APP_STATE.lastRunResults) return;
+  const idx = parseInt(document.getElementById("matrixScenarioSelect").value, 10) || 0;
+  const rows = APP_STATE.lastRunResults.allResults[idx].result.design.designRows;
+  for (let i = rows.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = rows[i]; rows[i] = rows[j]; rows[j] = tmp;
+  }
+  renderMatrixTab();
+  showToast("Physical execution order randomized (allocation counts preserved)!");
+}
+
+/* ============================================================================
+   10. HIGH-RESOLUTION DUAL CANVAS POWER CURVE RENDERER
+   ============================================================================ */
+
+function computeFiveTenTickStep(maxVal) {
+  const candidates = [
+    5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200, 250, 300, 400, 500, 750, 1000, 1500, 2000, 2500, 5000
+  ];
+  const targetTickCount = 6;
+  let bestStep = candidates[0];
+  let bestScore = Infinity;
+
+  for (const step of candidates) {
+    const nTicks = maxVal / step;
+    if (nTicks >= 3 && nTicks <= 10) {
+      const score = Math.abs(nTicks - targetTickCount);
+      if (score < bestScore) {
+        bestScore = score;
+        bestStep = step;
+      }
+    }
+  }
+  if (bestScore === Infinity) {
+    const raw = Math.max(5, maxVal / targetTickCount);
+    bestStep = Math.ceil(raw / 5) * 5;
+  }
+  return bestStep;
+}
+
+function drawDualPowerPlots(cfg, problem, allResults, sharedDesignCache) {
+  const canvas = document.getElementById("powerCanvas");
+  const ctx = canvas.getContext("2d");
+
+  const SCALE = 2;
+  const W = 1200, H = 480;
+  if (canvas.width !== W * SCALE || canvas.height !== H * SCALE) {
+    canvas.width = W * SCALE;
+    canvas.height = H * SCALE;
+  }
+
+  ctx.save();
+  ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, W, H);
+
+  const palette = ["#0284c7", "#16a34a", "#d97706", "#9333ea", "#dc2626", "#0d9488"];
+  const blockText = cfg.BLOCKING_FACTOR ? `Blocked by ${cfg.BLOCKING_FACTOR}` : "Unblocked";
+
+  ctx.fillStyle = "#0f172a";
+  ctx.font = "bold 15.5px Inter, -apple-system, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(
+    `${cfg.RESPONSE_TYPE} Response Power Analysis — ${getInteractionLabel(cfg.INTERACTION_ORDER)} | ${blockText} | ${cfg.OPTIMIZATION_MODE} Design`,
+    W / 2, 24
+  );
+
+  const sharedLegendItems = [
+    ...allResults.map((rec, sIdx) => ({
+      text: rec.label,
+      color: palette[sIdx % palette.length],
+      type: "solid"
+    })),
+    {
+      text: `Target Power (${(cfg.TARGET_POWER * 100).toFixed(0)}%)`,
+      color: "#ef4444",
+      type: "dashed"
+    },
+    {
+      text: `Recommended N`,
+      color: "#64748b",
+      type: "dotted"
+    }
+  ];
+
+  drawSharedLegendBar(ctx, W / 2, 36, sharedLegendItems);
+
+  const threshSeries = [];
+  const factSeries = [];
+
+  allResults.forEach((rec, sIdx) => {
+    const color = palette[sIdx % palette.length];
+    const altVal = rec.alternative;
+    const threshN = rec.thresholdN;
+    const factN = rec.result.nRuns;
+
+    if (Number.isFinite(threshN)) {
+      const maxT = Math.max(Math.ceil(threshN * 1.35), 15);
+      const pts = [];
+      for (let n = 2; n <= maxT; n++) {
+        pts.push({ x: n, y: thresholdPowerAtN(cfg, altVal, n) });
+      }
+      threshSeries.push({
+        label: rec.label,
+        color,
+        targetN: threshN,
+        achievedY: thresholdPowerAtN(cfg, altVal, threshN),
+        pts
+      });
+    }
+
+    const stepUnit = (cfg.OPTIMIZATION_MODE === "REPLICATE" && rec.baseDesign)
+      ? rec.baseDesign.designRows.length
+      : blockMultiplier(cfg);
+    const alignPlotN = (n) => alignToBlock(cfg, n, true, stepUnit);
+
+    const plotStart = alignPlotN(problem.pParams + 1);
+    const plotEnd = Math.max(factN + 2 * stepUnit, problem.pParams + 12);
+    const xSet = new Set();
+    for (let i = 0; i < cfg.PLOT_POINTS; i++) {
+      const raw = Math.round(plotStart + (i / Math.max(1, cfg.PLOT_POINTS - 1)) * (plotEnd - plotStart));
+      xSet.add(alignPlotN(Math.max(plotStart, raw)));
+    }
+    xSet.add(factN);
+    const xVals = [...xSet].sort((a, b) => a - b);
+
+    const fPts = [];
+    for (const n of xVals) {
+      const key = `PLOT|${cfg.RESPONSE_TYPE}|${altVal.toFixed(8)}|${cfg.OPTIMIZATION_MODE}|${n}`;
+      if (!sharedDesignCache[key]) {
+        sharedDesignCache[key] = cfg.OPTIMIZATION_MODE === "ITERATIVE"
+          ? generateDOptimalDesign(cfg, problem, n, rec.result.candidateWeights)
+          : replicatedDesign(rec.baseDesign, n);
+      }
+      const d = sharedDesignCache[key];
+      let pwr = 0.0;
+      if (!d.singular) {
+        pwr = cfg.RESPONSE_TYPE === "CONTINUOUS"
+          ? continuousOmnibusPower(cfg, d.X, problem.termGroups, altVal).minPower
+          : proportionalApproximatePower(cfg, d.X, problem.termGroups, cfg.P0, altVal).minPower;
+      }
+      fPts.push({ x: n, y: pwr });
+    }
+
+    if (cfg.APPLY_PLOT_SMOOTHING && fPts.length >= 3) {
+      let maxSoFar = 0;
+      for (const p of fPts) {
+        if (p.y > maxSoFar) maxSoFar = p.y;
+        p.y = maxSoFar;
+      }
+      const sm = fPts.map((p, i) => {
+        if (i === 0 || i === fPts.length - 1) return p.y;
+        return 0.25 * fPts[i - 1].y + 0.5 * p.y + 0.25 * fPts[i + 1].y;
+      });
+      fPts.forEach((p, i) => p.y = sm[i]);
+    }
+
+    const ptAtTarget = fPts.find(p => p.x === factN);
+    const curveYAtTarget = ptAtTarget ? ptAtTarget.y : rec.result.achievedPower;
+
+    factSeries.push({
+      label: rec.label,
+      color,
+      targetN: factN,
+      achievedY: curveYAtTarget,
+      budgetLimited: rec.result.budgetLimited,
+      pts: fPts
+    });
+  });
+
+  drawSingleSubplot(ctx, {
+    x0: 72, y0: 96, w: 495, h: 332,
+    title: "One-Sample Threshold Power",
+    series: threshSeries,
+    targetPower: cfg.TARGET_POWER
+  });
+
+  drawSingleSubplot(ctx, {
+    x0: 655, y0: 96, w: 495, h: 332,
+    title: "Factorial-Model Omnibus Power",
+    series: factSeries,
+    targetPower: cfg.TARGET_POWER
+  });
+
+  ctx.restore();
+}
+
+function drawSharedLegendBar(ctx, centerX, topY, items) {
+  ctx.font = "600 11.5px Inter, -apple-system, sans-serif";
+  const itemWidths = items.map(it => ctx.measureText(it.text).width + 38);
+  const gap = 16;
+  const totalContentW = itemWidths.reduce((a, b) => a + b, 0) + gap * Math.max(0, items.length - 1);
+  const boxW = Math.min(1120, totalContentW + 28);
+  const boxH = 28;
+  const boxX = centerX - boxW / 2;
+
+  ctx.fillStyle = "#f8fafc";
+  ctx.strokeStyle = "#cbd5e1";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(boxX, topY, boxW, boxH, 6);
+  else ctx.rect(boxX, topY, boxW, boxH);
+  ctx.fill();
+  ctx.stroke();
+
+  let curX = centerX - totalContentW / 2;
+  const midY = topY + boxH / 2;
+
+  items.forEach((it, idx) => {
+    ctx.save();
+    ctx.strokeStyle = it.color;
+    ctx.lineWidth = 2.4;
+    if (it.type === "dashed") ctx.setLineDash([6, 4]);
+    else if (it.type === "dotted") ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(curX, midY);
+    ctx.lineTo(curX + 22, midY);
+    ctx.stroke();
+
+    if (it.type === "solid") {
+      ctx.fillStyle = it.color;
+      ctx.beginPath();
+      ctx.arc(curX + 11, midY, 3.2, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    ctx.fillStyle = "#1e293b";
+    ctx.font = "600 11.5px Inter, -apple-system, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(it.text, curX + 28, midY + 0.5);
+
+    curX += itemWidths[idx] + gap;
+  });
+  ctx.textBaseline = "alphabetic";
+}
+
+function drawSingleSubplot(ctx, opts) {
+  const { x0, y0, w, h, title, series, targetPower } = opts;
+
+  let rawMaxX = -Infinity;
+  series.forEach(s => s.pts.forEach(p => {
+    if (p.x > rawMaxX) rawMaxX = p.x;
+  }));
+  if (!Number.isFinite(rawMaxX) || rawMaxX <= 5) rawMaxX = 20;
+
+  const tickStep = computeFiveTenTickStep(rawMaxX);
+  const minX = 0;
+  const maxX = Math.max(tickStep * 2, Math.ceil((rawMaxX * 1.04) / tickStep) * tickStep);
+
+  const mapX = x => x0 + ((x - minX) / (maxX - minX)) * w;
+  const mapY = y => y0 + h - (Math.max(0, Math.min(1.05, y)) / 1.05) * h;
+
+  ctx.fillStyle = "#0f172a";
+  ctx.font = "bold 13.5px Inter, -apple-system, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(title, x0 + w / 2, y0 - 10);
+
+  ctx.strokeStyle = "#e2e8f0";
+  ctx.lineWidth = 1;
+  for (let p = 0; p <= 1.0001; p += 0.2) {
+    const py = mapY(p);
+    ctx.beginPath(); ctx.moveTo(x0, py); ctx.lineTo(x0 + w, py); ctx.stroke();
+    ctx.fillStyle = "#475569";
+    ctx.font = "11px Inter, -apple-system, sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText((p * 100).toFixed(0) + "%", x0 - 8, py + 4);
+  }
+
+  for (let xv = tickStep; xv <= maxX; xv += tickStep) {
+    const px = mapX(xv);
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(px, y0); ctx.lineTo(px, y0 + h); ctx.stroke();
+
+    ctx.strokeStyle = "#64748b";
+    ctx.beginPath(); ctx.moveTo(px, y0 + h); ctx.lineTo(px, y0 + h + 5); ctx.stroke();
+
+    ctx.fillStyle = "#334155";
+    ctx.font = "600 11px Inter, -apple-system, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(String(xv), px, y0 + h + 18);
+  }
+
+  ctx.strokeStyle = "#94a3b8";
+  ctx.lineWidth = 1.2;
+  ctx.strokeRect(x0, y0, w, h);
+
+  ctx.fillStyle = "#0f172a";
+  ctx.font = "bold 12px Inter, -apple-system, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Total Runs (N)", x0 + w / 2, y0 + h + 38);
+
+  ctx.save();
+  ctx.translate(x0 - 45, y0 + h / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("Statistical Power", 0, 0);
+  ctx.restore();
+
+  const ty = mapY(targetPower);
+  ctx.save();
+  ctx.strokeStyle = "#ef4444";
+  ctx.lineWidth = 1.8;
+  ctx.setLineDash([6, 4]);
+  ctx.beginPath(); ctx.moveTo(x0, ty); ctx.lineTo(x0 + w, ty); ctx.stroke();
+  ctx.restore();
+
+  series.forEach(s => {
+    if (s.targetN >= minX && s.targetN <= maxX) {
+      const vx = mapX(s.targetN);
+      ctx.save();
+      ctx.strokeStyle = s.color;
+      ctx.globalAlpha = 0.55;
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(vx, y0); ctx.lineTo(vx, y0 + h); ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    s.pts.forEach((pt, idx) => {
+      const px = mapX(pt.x), py = mapY(pt.y);
+      if (idx === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+
+    ctx.fillStyle = s.color;
+    s.pts.forEach(pt => {
+      ctx.beginPath();
+      ctx.arc(mapX(pt.x), mapY(pt.y), 3, 0, 2 * Math.PI);
+      ctx.fill();
+    });
+  });
+
+  const placedBadges = [];
+  const sortedForBadges = [...series].sort((a, b) => a.targetN - b.targetN);
+
+  sortedForBadges.forEach((s, idx) => {
+    if (!(s.targetN >= minX && s.targetN <= maxX)) return;
+
+    let curveY = s.achievedY;
+    if (!Number.isFinite(curveY)) {
+      const closestPt = s.pts.reduce((prev, curr) =>
+        Math.abs(curr.x - s.targetN) < Math.abs(prev.x - s.targetN) ? curr : prev, s.pts[0]
+      );
+      curveY = closestPt ? closestPt.y : targetPower;
+    }
+
+    const anchorX = mapX(s.targetN);
+    const anchorY = mapY(curveY);
+
+    ctx.save();
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(anchorX, anchorY, 5.2, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    const labelText = `N = ${s.targetN}`;
+    ctx.font = "bold 11px Inter, -apple-system, sans-serif";
+    const textW = ctx.measureText(labelText).width;
+    const badgeW = textW + 14;
+    const badgeH = 20;
+
+    const candidateOffsets = [
+      { dx: 0, dy: -22 },
+      { dx: 0, dy: 22 },
+      { dx: -badgeW * 0.55, dy: -22 },
+      { dx: badgeW * 0.55, dy: -22 },
+      { dx: -badgeW * 0.6, dy: 20 },
+      { dx: badgeW * 0.6, dy: 20 },
+      { dx: 0, dy: -42 },
+      { dx: 0, dy: 42 }
+    ];
+
+    if (idx % 2 === 1) {
+      const first = candidateOffsets.shift();
+      candidateOffsets.splice(1, 0, first);
+    }
+
+    let chosenBox = null;
+    for (const off of candidateOffsets) {
+      let bx = anchorX + off.dx - badgeW / 2;
+      let by = anchorY + off.dy - badgeH / 2;
+
+      bx = Math.max(x0 + 4, Math.min(x0 + w - badgeW - 4, bx));
+      by = Math.max(y0 + 4, Math.min(y0 + h - badgeH - 4, by));
+
+      const overlapsExisting = placedBadges.some(other =>
+        !(bx + badgeW + 4 < other.bx || bx > other.bx + other.bw + 4 ||
+          by + badgeH + 4 < other.by || by > other.by + other.bh + 4)
+      );
+
+      if (!overlapsExisting) {
+        chosenBox = { bx, by, bw: badgeW, bh: badgeH };
+        break;
+      }
+    }
+
+    if (!chosenBox) {
+      let bx = Math.max(x0 + 4, Math.min(x0 + w - badgeW - 4, anchorX - badgeW / 2));
+      let by = Math.max(y0 + 4, Math.min(y0 + h - badgeH - 4, anchorY - 28 - idx * 22));
+      chosenBox = { bx, by, bw: badgeW, bh: badgeH };
+    }
+
+    placedBadges.push(chosenBox);
+
+    const centerBx = chosenBox.bx + chosenBox.bw / 2;
+    const centerBy = chosenBox.by + chosenBox.bh / 2;
+    ctx.save();
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(anchorX, anchorY);
+    ctx.lineTo(centerBx, centerBy);
+    ctx.stroke();
+
+    ctx.shadowColor = "rgba(15, 23, 42, 0.14)";
+    ctx.shadowBlur = 4;
+    ctx.shadowOffsetY = 1;
+    ctx.fillStyle = "rgba(255, 255, 255, 0.96)";
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(chosenBox.bx, chosenBox.by, chosenBox.bw, chosenBox.bh, 5);
+    else ctx.rect(chosenBox.bx, chosenBox.by, chosenBox.bw, chosenBox.bh);
+    ctx.fill();
+    ctx.shadowColor = "transparent";
+    ctx.stroke();
+
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 11px Inter, -apple-system, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(labelText, centerBx, centerBy + 0.5);
+    ctx.restore();
+  });
+}
+
+/* ============================================================================
+   11. ONE-CLICK COPY & DOWNLOAD HELPERS (CSV & PNG)
+   ============================================================================ */
+
+function copyNarrativeText() {
+  const txt = document.getElementById("narrativeOutput").textContent;
+  navigator.clipboard.writeText(txt).then(() => showToast("TEMP Narrative copied to clipboard!"));
+}
+
+function copyEngineLog() {
+  const txt = document.getElementById("engineLogConsole").textContent;
+  navigator.clipboard.writeText(txt).then(() => showToast("Engine log copied to clipboard!"));
+}
+
+function downloadPlotPNG() {
+  const canvas = document.getElementById("powerCanvas");
+  const url = canvas.toDataURL("image/png");
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "DOE_Power_Curve.png";
+  a.click();
+  showToast("Downloaded DOE_Power_Curve.png!");
+}
+
+function buildCSVContentForRecord(rec) {
+  const cfg = APP_STATE.lastConfig;
+  const problem = APP_STATE.lastProblem;
+  const nowStr = new Date().toISOString().slice(0, 16).replace("T", " ");
+  const fNames = Object.keys(cfg.FACTORS);
+
+  const metadata = [
+    "# ==============================================================================",
+    "# DEPARTMENT OF WAR - TEST AND EVALUATION DESIGN EXPORT",
+    `# Date Generated: ${nowStr}`,
+    `# Response Type: ${cfg.RESPONSE_TYPE}`,
+    `# Condition: ${rec.label}`,
+    `# Optimization Mode: ${cfg.OPTIMIZATION_MODE}`,
+    `# Formula: ${problem.formula}`,
+    `# Target Power: ${cfg.TARGET_POWER.toFixed(3)}`,
+    `# Achieved Minimum Omnibus Power: ${rec.result.achievedPower.toFixed(4)}`,
+    `# Alpha: ${cfg.ALPHA}`,
+    `# Multiplicity Method: ${cfg.MULTIPLICITY_METHOD}`,
+    `# Blocking Factor: ${cfg.BLOCKING_FACTOR || "None"}`,
+    `# Computational Effort: ${cfg.COMPUTATIONAL_EFFORT}`,
+    `# Monte Carlo Conservative Bound Enabled: ${cfg.USE_CONSERVATIVE_MC_BOUND}`,
+    `# Monte Carlo One-Sided Wilson Confidence: ${cfg.MC_CONFIDENCE}`,
+    "# Proportional Threshold Method:",
+    "#   Original Code 2 NormalIndPower / proportion_effectsize calculation",
+    "# Proportional Factorial Design:",
+    "#   Robust local logistic D-optimality using X'W X",
+    "# Proportional Factorial Test:",
+    "#   Binomial GLM likelihood-ratio omnibus effect test",
+    "# Multi-Level Factor Rule:",
+    "#   Midpoint-centered least-favorable coded-coefficient alternative",
+    "# =============================================================================="
+  ].join("\n");
+
+  const header = ["Run_Order", ...fNames].join(",");
+  const rows = rec.result.design.designRows.map((r, i) =>
+    [i + 1, ...fNames.map(f => `"${String(r[f]).replace(/"/g, '""')}"`)].join(",")
+  );
+  return metadata + "\n" + header + "\n" + rows.join("\n") + "\n";
+}
+
+function triggerCSVDownload(csvText, filename) {
+  const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`Downloaded ${filename}!`);
+}
+
+function exportConditionCSV(idx) {
+  if (!APP_STATE.lastRunResults) return;
+  const rec = APP_STATE.lastRunResults.allResults[idx];
+  const csv = buildCSVContentForRecord(rec);
+  triggerCSVDownload(csv, `DOE_Optimized_Run_Matrix_${idx + 1}.csv`);
+}
+
+function downloadSelectedCSV() {
+  if (!APP_STATE.lastRunResults) return;
+  const selIdx = getSelectedRecordIndex();
+  exportConditionCSV(selIdx);
+}
+
+function downloadActiveMatrixCSV() {
+  if (!APP_STATE.lastRunResults) return;
+  const idx = parseInt(document.getElementById("matrixScenarioSelect").value, 10) || 0;
+  exportConditionCSV(idx);
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  renderFactorsEditor();
+  renderActiveVisualRules();
+  executeEngine();
+});
+</script>
+</body>
+</html>
